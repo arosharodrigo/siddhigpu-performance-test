@@ -95,6 +95,8 @@ public class InputFileReader implements Runnable {
             e.printStackTrace();
         } catch (InterruptedException e) {
             e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
         } finally {
             System.out.println("Wait few minuts before shutdown...");
             try {
