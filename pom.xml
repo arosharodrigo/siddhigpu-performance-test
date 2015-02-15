@@ -4,7 +4,7 @@
 
   <groupId>uom.msc.debs</groupId>
   <artifactId>debs2013</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>1.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>DEBS 2013 - Siddhi GPU benchmark</name>
@@ -12,6 +12,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <siddhi.version>3.0.0.gpu-SNAPSHOT</siddhi.version>
+    <platform>linux-x86_64</platform>
   </properties>
 
   <dependencies>
@@ -31,20 +33,23 @@
     <dependency>
         <groupId>org.wso2.siddhi</groupId>
         <artifactId>siddhi-query-api</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
-        <scope>compile</scope>
+        <version>${siddhi.version}</version>
     </dependency>
     <dependency>
         <groupId>org.wso2.siddhi</groupId>
         <artifactId>siddhi-query-compiler</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
-        <scope>compile</scope>
+        <version>${siddhi.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.wso2.siddhi.gpu.jni</groupId>
+        <artifactId>javacpp-cudaclib</artifactId>
+        <version>${siddhi.version}</version>
+        <classifier>${platform}</classifier>
     </dependency>
     <dependency>
         <groupId>org.wso2.siddhi</groupId>
         <artifactId>siddhi-core</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
-        <scope>compile</scope>
+        <version>${siddhi.version}</version>
     </dependency>
     <dependency>
         <groupId>log4j</groupId>
@@ -135,4 +140,5 @@
             </plugin>
         </plugins>
     </build>
+    
 </project>
