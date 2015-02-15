@@ -54,12 +54,12 @@ public class InputFileReader implements Runnable {
                             Double.valueOf(dataStr[4]), 
                             v_kmh,
                             a_ms, 
-                            Integer.valueOf(dataStr[7]), 
-                            Integer.valueOf(dataStr[8]),
-                            Integer.valueOf(dataStr[9]), 
-                            Integer.valueOf(dataStr[10]), 
-                            Integer.valueOf(dataStr[11]), 
-                            Integer.valueOf(dataStr[12]),
+                            Double.valueOf(dataStr[7]), 
+                            Double.valueOf(dataStr[8]),
+                            Double.valueOf(dataStr[9]), 
+                            Double.valueOf(dataStr[10]), 
+                            Double.valueOf(dataStr[11]), 
+                            Double.valueOf(dataStr[12]),
                             System.nanoTime(), 
                             ((Double) (time * Math.pow(10, -9))).longValue()};
 
