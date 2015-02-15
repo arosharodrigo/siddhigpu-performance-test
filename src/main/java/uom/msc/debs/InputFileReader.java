@@ -25,10 +25,10 @@ public class InputFileReader implements Runnable {
     }
     
     public void run() {
+        long count = 0;
         try {
             BufferedReader br = new BufferedReader(new FileReader(filePath), 10 * 1024 * 1024);
 
-            long count = 0;
             String line = br.readLine();
             long start = System.currentTimeMillis();
             
@@ -96,6 +96,7 @@ public class InputFileReader implements Runnable {
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (Exception e) {
+            System.out.println("Exception at line : " + count);
             e.printStackTrace();
         } finally {
             System.out.println("Wait few minuts before shutdown...");
