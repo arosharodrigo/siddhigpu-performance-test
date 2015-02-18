@@ -6,18 +6,34 @@ import java.util.List;
 import org.wso2.siddhi.core.ExecutionPlanRuntime;
 
 public abstract class Usecase {
-    private List<TestQuery> queries;
+    private List<TestQuery> singleDevicequeries;
+    private List<TestQuery> multiDevicequeries;
+    protected int execPlanId;
     
-    public Usecase() {
-        queries = new ArrayList<TestQuery>();
+    public Usecase(int execPlanId) {
+        this.execPlanId = execPlanId;
+        singleDevicequeries = new ArrayList<TestQuery>();
+        multiDevicequeries = new ArrayList<TestQuery>();
     }
     
-    public void addQuery(TestQuery query) {
-        queries.add(query);
+    public void addSingleDeviceQuery(TestQuery query) {
+        singleDevicequeries.add(query);
     }
     
-    public List<TestQuery> getQueries() {
-        return queries;
+    public List<TestQuery> getSingleDeviceQueries() {
+        return singleDevicequeries;
+    }
+    
+    public void addMultiDeviceQuery(TestQuery query) {
+        multiDevicequeries.add(query);
+    }
+    
+    public List<TestQuery> getMultiDeviceQueries() {
+        return multiDevicequeries;
+    }
+    
+    public int getExecPlanId() {
+        return execPlanId;
     }
     
     public abstract void addCallbacks(ExecutionPlanRuntime executionPlanRuntime);

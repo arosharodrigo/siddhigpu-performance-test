@@ -21,12 +21,46 @@ public class UsecaseRunner {
     private static final Logger log = Logger.getLogger(UsecaseRunner.class);
     private static Options cliOptions;
     
-    private static String getQueryPlan(int queryCount, boolean asyncEnabled, boolean gpuEnabled, 
+    private static Usecase[] getUsecases(int execPlanId, String usecaseName, int usecaseCountPerExecPlan) {
+
+        Usecase usecases[] = new Usecase[usecaseCountPerExecPlan];
+        
+        if(usecaseName.compareTo("filter") == 0) {
+            for(int i=0;i < usecaseCountPerExecPlan; ++i) {
+                usecases[i] = new FilterUsecase(execPlanId);
+            }
+        } else if(usecaseName.compareTo("window") == 0) {
+            for(int i=0;i < usecaseCountPerExecPlan; ++i) {
+                usecases[i] = new WindowUsecase(execPlanId);
+            }
+        } else if(usecaseName.compareTo("join") == 0) {
+            for(int i=0;i < usecaseCountPerExecPlan; ++i) {
+                usecases[i] = new JoinUsecase(execPlanId);
+            }
+        } else if(usecaseName.compareTo("filter_window") == 0) {
+            for(int i=0;i < usecaseCountPerExecPlan; ++i) {
+                usecases[i] = new FilterAndWindowUsecase(execPlanId);
+            }
+        } else if(usecaseName.compareTo("filter_join") == 0) {
+            for(int i=0;i < usecaseCountPerExecPlan; ++i) {
+                usecases[i] = new FilterAndJoinUsecase(execPlanId);
+            }
+        } else if(usecaseName.compareTo("mix") == 0) {
+            for(int i=0;i < usecaseCountPerExecPlan; ++i) {
+                usecases[i] = new MixUsecase(execPlanId);
+            }
+        }
+        
+        return usecases;
+    }
+    
+    private static String getQueryPlan(int executionPlanId, String executionPlanName,
+            boolean asyncEnabled, boolean gpuEnabled, 
             int maxEventBatchSize, int minEventBatchSize,
             int eventBlockSize, boolean softBatchScheduling,
-            int workSize, List<TestQuery> queries) {
+            int workSize, Usecase usecases[], boolean useMultiDevice) {
         
-        String cseEventStream = "@plan:name('FilterMultipleQuery') " + (asyncEnabled ? "@plan:parallel" : "" ) + " "
+        String sensorStream = "@plan:name('" + executionPlanName + executionPlanId + "') " + (asyncEnabled ? "@plan:parallel" : "" ) + " "
                 + "define stream sensorStream ( sid string, ts long, "
                 + "x int, y int,  z int, "
                 + "v double, a double, "
@@ -34,34 +68,39 @@ public class UsecaseRunner {
                 + "ax int, ay int, az int, "
                 + "tsr long, tsms long );";
         
-        System.out.println("Stream def = [ " + cseEventStream + " ]");
+        System.out.println("Stream def = [ " + sensorStream + " ]");
         StringBuffer execString = new StringBuffer();
-        execString.append(cseEventStream);
+        execString.append(sensorStream);
         
-        queryCount = Math.min(queryCount, queries.size());
-        
-        for(int i=0; i<queryCount; ++i) {
-            TestQuery query = queries.get(i);
-            
-            StringBuilder sb = new StringBuilder();
-            sb.append("@info(name = 'query" + (i + 1) + "') ");
-            if(gpuEnabled)
-            {
-                sb.append("@gpu(")
-                .append("cuda.device='").append(query.cudaDeviceId).append("', ")
-                .append("batch.max.size='").append(maxEventBatchSize).append("', ")
-                .append("batch.min.size='").append(minEventBatchSize).append("', ")
-                .append("block.size='").append(eventBlockSize).append("', ")
-                .append("batch.schedule='").append((softBatchScheduling ? "soft" : "hard")).append("', ")
-                .append("string.sizes='symbol=8', ")
-                .append("work.size='").append(workSize).append("' ")
-                .append(") ")
-                .append("@performance(batch.count='1000') ");
+        for(Usecase usecase : usecases) {
+            List<TestQuery> queries = null;
+            if(!useMultiDevice) {
+                queries = usecase.getSingleDeviceQueries();
+            } else {
+                queries = usecase.getSingleDeviceQueries();
             }
-            sb.append(query.query);
-            String queryString = sb.toString();
-            System.out.println("Query" + (i+1) + " = [ " + queryString + " ]");
-            execString.append(queryString);
+            
+            for(TestQuery query : queries) {
+                StringBuilder sb = new StringBuilder();
+                sb.append("@info(name = '" + query.queryId + "') ");
+                if(gpuEnabled)
+                {
+                    sb.append("@gpu(")
+                    .append("cuda.device='").append(query.cudaDeviceId).append("', ")
+                    .append("batch.max.size='").append(maxEventBatchSize).append("', ")
+                    .append("batch.min.size='").append(minEventBatchSize).append("', ")
+                    .append("block.size='").append(eventBlockSize).append("', ")
+                    .append("batch.schedule='").append((softBatchScheduling ? "soft" : "hard")).append("', ")
+                    .append("string.sizes='symbol=8', ")
+                    .append("work.size='").append(workSize).append("' ")
+                    .append(") ")
+                    .append("@performance(batch.count='1000') ");
+                }
+                sb.append(query.query);
+                String queryString = sb.toString();
+                System.out.println(executionPlanName + "::" + query.queryId + " = [ " + queryString + " ]");
+                execString.append(queryString);
+            }
         }
         
         return execString.toString();
@@ -80,7 +119,6 @@ public class UsecaseRunner {
         cliOptions.addOption("a", "enable-async", true, "Enable Async processing");
         cliOptions.addOption("g", "enable-gpu", true, "Enable GPU processing");
         cliOptions.addOption("e", "event-count", true, "Total number of events to be generated");
-        cliOptions.addOption("q", "query-count", true, "Number of Siddhi Queries to be generated");
         cliOptions.addOption("r", "ringbuffer-size", true, "Disruptor RingBuffer size - in power of two");
         cliOptions.addOption("Z", "batch-max-size", true, "GPU Event batch max size");
         cliOptions.addOption("z", "batch-min-size", true, "GPU Event batch min size");
@@ -89,14 +127,17 @@ public class UsecaseRunner {
         cliOptions.addOption("s", "strict-batch-scheduling", true, "Strict batch size policy");
         cliOptions.addOption("w", "work-size", true, "Number of events processed by each GPU thread - 0=default");
         cliOptions.addOption("i", "input-file", true, "Input events file path");
+        cliOptions.addOption("u", "usecase", true, "Name of the usecase");
+        cliOptions.addOption("p", "execplan", true, "Name of the ExecutionPlan");
+        cliOptions.addOption("c", "usecase-count", true, "Usecase count per ExecutionPlan");
+        cliOptions.addOption("x", "execplan-count", true, "ExecutionPlan count");
+        cliOptions.addOption("m", "use-multidevice", true, "Use multiple GPU devices");
         
         CommandLineParser cliParser = new BasicParser();
         CommandLine cmd = null;
         
         boolean asyncEnabled = true;
         boolean gpuEnabled = false;
-        long totalEventCount = 50000000l;
-        int queryCount = 1;
         int defaultBufferSize = 1024;
         int threadPoolSize = 4;
         int eventBlockSize = 256;
@@ -105,6 +146,11 @@ public class UsecaseRunner {
         int minEventBatchSize = 32;
         int workSize = 0;
         String inputEventFilePath = null;
+        String usecaseName = null;
+        String executionPlanName = null;
+        int usecaseCountPerExecPlan = 0;
+        int execPlanCount = 0;
+        boolean multiDevice = false;
         
         try {
             cmd = cliParser.parse(cliOptions, args);
@@ -113,12 +159,6 @@ public class UsecaseRunner {
             }
             if (cmd.hasOption("g")) {
                 gpuEnabled = Boolean.parseBoolean(cmd.getOptionValue("g"));
-            }
-            if (cmd.hasOption("e")) {
-                totalEventCount = Long.parseLong(cmd.getOptionValue("e"));
-            }
-            if (cmd.hasOption("q")) {
-                queryCount = Integer.parseInt(cmd.getOptionValue("q"));
             }
             if (cmd.hasOption("r")) {
                 defaultBufferSize = Integer.parseInt(cmd.getOptionValue("r"));
@@ -141,10 +181,37 @@ public class UsecaseRunner {
             if (cmd.hasOption("w")) {
                 workSize = Integer.parseInt(cmd.getOptionValue("w"));
             }
+            if (cmd.hasOption("m")) {
+                multiDevice = !Boolean.parseBoolean(cmd.getOptionValue("m"));
+            }
             if (cmd.hasOption("i")) {
                 inputEventFilePath = cmd.getOptionValue("i");
             }else {
                 System.out.println("Please provide input event file path");
+                Help();
+            }
+            if (cmd.hasOption("u")) {
+                usecaseName = cmd.getOptionValue("u");
+            }else {
+                System.out.println("Please provide the usecase name");
+                Help();
+            }
+            if (cmd.hasOption("p")) {
+                executionPlanName = cmd.getOptionValue("p");
+            }else {
+                System.out.println("Please provide the ExecutionPlan name");
+                Help();
+            }
+            if (cmd.hasOption("c")) {
+                usecaseCountPerExecPlan = Integer.parseInt(cmd.getOptionValue("c"));
+            } else {
+                System.out.println("Please provide the usecase count");
+                Help();
+            }
+            if (cmd.hasOption("x")) {
+                execPlanCount = Integer.parseInt(cmd.getOptionValue("x"));
+            } else {
+                System.out.println("Please provide the ExecutionPlan count");
                 Help();
             }
             
@@ -153,10 +220,10 @@ public class UsecaseRunner {
             Help();
         }
         
+        System.out.println("ExecutionPlan : name=" + executionPlanName + " execPalnCount=" + execPlanCount +
+                " usecase=" + usecaseName + " usecaseCount=" + usecaseCountPerExecPlan + " useMultiDevice=" + multiDevice);
         System.out.println("Siddhi.Config [EnableAsync=" + asyncEnabled +
                 "|GPUEnabled=" + gpuEnabled +
-                "|EventCount=" + totalEventCount +
-                "|QueryCount=" + queryCount +
                 "|RingBufferSize=" + defaultBufferSize +
                 "|ThreadPoolSize=" + threadPoolSize +
                 "|EventBlockSize=" + eventBlockSize + 
@@ -173,29 +240,41 @@ public class UsecaseRunner {
 //                Executors.new newFixedThreadPool(threadPoolSize);
         siddhiManager.getSiddhiContext().setScheduledExecutorService(Executors.newScheduledThreadPool(threadPoolSize));
         
-        Usecase filterUsecase = new FilterUsecase();
+        ExecutionPlanRuntime executionPlanRuntimes[] = new ExecutionPlanRuntime[execPlanCount];
+        Thread eventSenderThreads[] = new Thread[execPlanCount];
         
-        String queryPlan = getQueryPlan(queryCount, asyncEnabled, gpuEnabled, maxEventBatchSize, 
-                minEventBatchSize, eventBlockSize, softBatchScheduling, workSize, filterUsecase.getQueries());
+        InputFileReader fileReader = new InputFileReader(inputEventFilePath);
         
-        ExecutionPlanRuntime executionPlanRuntime = siddhiManager.createExecutionPlanRuntime(queryPlan);
+        for(int i=0; i<execPlanCount; ++i) {
+            Usecase usecases[] = getUsecases(i, usecaseName, usecaseCountPerExecPlan);
+            String queryPlan = getQueryPlan(i, executionPlanName, asyncEnabled, gpuEnabled, maxEventBatchSize, 
+                    minEventBatchSize, eventBlockSize, softBatchScheduling, workSize, usecases, multiDevice);
+            
+            executionPlanRuntimes[i] = siddhiManager.createExecutionPlanRuntime(queryPlan);
+            
+            for(Usecase usecase: usecases) {
+                usecase.addCallbacks(executionPlanRuntimes[i]);
+            }
+            
+            InputHandler inputHandlerSensorStream = executionPlanRuntimes[i].getInputHandler("sensorStream");
+            executionPlanRuntimes[i].start();
+            
+            EventSender sensorEventSender = new EventSender(inputHandlerSensorStream);
+            eventSenderThreads[i] = new Thread(sensorEventSender);
+            
+            fileReader.addQueue(sensorEventSender.getQueue());
+        }
         
-        filterUsecase.addCallbacks(executionPlanRuntime);
-        
-        InputHandler inputHandlerSensorStream = executionPlanRuntime.getInputHandler("sensorStream");
-        executionPlanRuntime.start();
-        
-        EventSender sensorEventSender = new EventSender(inputHandlerSensorStream);
-        
-        InputFileReader fileReader = new InputFileReader(inputEventFilePath, sensorEventSender.getQueue());
-        
-        Thread eventSenderThread = new Thread(sensorEventSender);
-        eventSenderThread.start();
+        for(Thread t: eventSenderThreads) {
+            t.start();
+        }
         
         Thread fileReaderThread = new Thread(fileReader);
         fileReaderThread.start();
         
-        eventSenderThread.join();
+        for(Thread t: eventSenderThreads) {
+            t.join();
+        }
         fileReaderThread.join();
         
         System.exit(0);

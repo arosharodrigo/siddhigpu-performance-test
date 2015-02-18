@@ -7,7 +7,7 @@ import org.wso2.siddhi.core.event.Event;
 import org.wso2.siddhi.core.stream.input.InputHandler;
 
 public class EventSender implements Runnable {
-    private BlockingQueue<Event> queue = new LinkedBlockingQueue<Event>(200000);
+    private BlockingQueue<Event> queue = new LinkedBlockingQueue<Event>(2000000);
     private InputHandler inputHandler;
     
     public EventSender(InputHandler inputHandler) {
@@ -26,7 +26,7 @@ public class EventSender implements Runnable {
         
     }
     
-    public BlockingQueue getQueue() {
+    public BlockingQueue<Event> getQueue() {
         return queue;
     }
 }
