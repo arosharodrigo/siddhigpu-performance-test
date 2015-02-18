@@ -72,6 +72,7 @@ public class UsecaseRunner {
         StringBuffer execString = new StringBuffer();
         execString.append(sensorStream);
         
+        int usecaseIndex = 0;
         for(Usecase usecase : usecases) {
             List<TestQuery> queries = null;
             if(!useMultiDevice) {
@@ -82,7 +83,7 @@ public class UsecaseRunner {
             
             for(TestQuery query : queries) {
                 StringBuilder sb = new StringBuilder();
-                sb.append("@info(name = '" + query.queryId + "') ");
+                sb.append("@info(name = '" + query.queryId + usecaseIndex + "') ");
                 if(gpuEnabled)
                 {
                     sb.append("@gpu(")
@@ -101,6 +102,7 @@ public class UsecaseRunner {
                 System.out.println(executionPlanName + "::" + query.queryId + " = [ " + queryString + " ]");
                 execString.append(queryString);
             }
+            usecaseIndex++;
         }
         
         return execString.toString();
@@ -118,7 +120,6 @@ public class UsecaseRunner {
         cliOptions = new Options();
         cliOptions.addOption("a", "enable-async", true, "Enable Async processing");
         cliOptions.addOption("g", "enable-gpu", true, "Enable GPU processing");
-        cliOptions.addOption("e", "event-count", true, "Total number of events to be generated");
         cliOptions.addOption("r", "ringbuffer-size", true, "Disruptor RingBuffer size - in power of two");
         cliOptions.addOption("Z", "batch-max-size", true, "GPU Event batch max size");
         cliOptions.addOption("z", "batch-min-size", true, "GPU Event batch min size");
@@ -182,7 +183,7 @@ public class UsecaseRunner {
                 workSize = Integer.parseInt(cmd.getOptionValue("w"));
             }
             if (cmd.hasOption("m")) {
-                multiDevice = !Boolean.parseBoolean(cmd.getOptionValue("m"));
+                multiDevice = Boolean.parseBoolean(cmd.getOptionValue("m"));
             }
             if (cmd.hasOption("i")) {
                 inputEventFilePath = cmd.getOptionValue("i");
