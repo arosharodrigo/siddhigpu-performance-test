@@ -28,10 +28,10 @@ public class UsecaseRunner {
         
         String cseEventStream = "@plan:name('FilterMultipleQuery') " + (asyncEnabled ? "@plan:parallel" : "" ) + " "
                 + "define stream sensorStream ( sid string, ts long, "
-                + "x double, y double,  z double, "
+                + "x int, y int,  z int, "
                 + "v double, a double, "
-                + "vx double, vy double, vz double, "
-                + "ax double, ay double, az double, "
+                + "vx int, vy int, vz int, "
+                + "ax int, ay int, az int, "
                 + "tsr long, tsms long );";
         
         System.out.println("Stream def = [ " + cseEventStream + " ]");

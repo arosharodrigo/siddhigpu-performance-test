@@ -14,6 +14,10 @@ public class FilterUsecase extends Usecase {
                 + "(ts >= 13086639146403495l and ts <= 14879639146403495l)] " +
                 "select sid, ts " +
                 "insert into filteredSensorStream;", 0));
+        
+        addQuery(new TestQuery("from sensorStream[sid != '97' and sid != '98' and sid != '99' and sid != '100'] " +
+                "select sid, ts " +
+                "insert into filteredSensorStream;", 1));
     }
     
     public void addCallbacks(ExecutionPlanRuntime executionPlanRuntime) {
