@@ -18,6 +18,69 @@ public class FilterUsecase extends Usecase {
         addQuery(new TestQuery("from sensorStream[sid != '97' and sid != '98' and sid != '99' and sid != '100'] " +
                 "select sid, ts " +
                 "insert into filteredSensorStream;", 0));
+        
+        addQuery(new TestQuery("from sensorStream[(ts >= 10753295594424116l and ts <= 12557295594424116l) or "
+                + "(ts >= 13086639146403495l and ts <= 14879639146403495l)] " +
+                "select sid, ts " +
+                "insert into filteredSensorStream;", 1));
+        
+        addQuery(new TestQuery("from sensorStream[sid != '97' and sid != '98' and sid != '99' and sid != '100'] " +
+                "select sid, ts " +
+                "insert into filteredSensorStream;", 0));
+        
+        addQuery(new TestQuery("from sensorStream[(ts >= 10753295594424116l and ts <= 12557295594424116l) or "
+                + "(ts >= 13086639146403495l and ts <= 14879639146403495l)] " +
+                "select sid, ts " +
+                "insert into filteredSensorStream;", 1));
+        
+        addQuery(new TestQuery("from sensorStream[sid != '97' and sid != '98' and sid != '99' and sid != '100'] " +
+                "select sid, ts " +
+                "insert into filteredSensorStream;", 0));
+        
+        addQuery(new TestQuery("from sensorStream[(ts >= 10753295594424116l and ts <= 12557295594424116l) or "
+                + "(ts >= 13086639146403495l and ts <= 14879639146403495l)] " +
+                "select sid, ts " +
+                "insert into filteredSensorStream;", 1));
+        
+        addQuery(new TestQuery("from sensorStream[sid != '97' and sid != '98' and sid != '99' and sid != '100'] " +
+                "select sid, ts " +
+                "insert into filteredSensorStream;", 0));
+        
+        addQuery(new TestQuery("from sensorStream[(ts >= 10753295594424116l and ts <= 12557295594424116l) or "
+                + "(ts >= 13086639146403495l and ts <= 14879639146403495l)] " +
+                "select sid, ts " +
+                "insert into filteredSensorStream;", 1));
+        
+        addQuery(new TestQuery("from sensorStream[sid != '97' and sid != '98' and sid != '99' and sid != '100'] " +
+                "select sid, ts " +
+                "insert into filteredSensorStream;", 0));
+        
+        addQuery(new TestQuery("from sensorStream[(ts >= 10753295594424116l and ts <= 12557295594424116l) or "
+                + "(ts >= 13086639146403495l and ts <= 14879639146403495l)] " +
+                "select sid, ts " +
+                "insert into filteredSensorStream;", 1));
+        
+        addQuery(new TestQuery("from sensorStream[sid != '97' and sid != '98' and sid != '99' and sid != '100'] " +
+                "select sid, ts " +
+                "insert into filteredSensorStream;", 0));
+        
+        addQuery(new TestQuery("from sensorStream[(ts >= 10753295594424116l and ts <= 12557295594424116l) or "
+                + "(ts >= 13086639146403495l and ts <= 14879639146403495l)] " +
+                "select sid, ts " +
+                "insert into filteredSensorStream;", 1));
+        
+        addQuery(new TestQuery("from sensorStream[sid != '97' and sid != '98' and sid != '99' and sid != '100'] " +
+                "select sid, ts " +
+                "insert into filteredSensorStream;", 0));
+        
+        addQuery(new TestQuery("from sensorStream[(ts >= 10753295594424116l and ts <= 12557295594424116l) or "
+                + "(ts >= 13086639146403495l and ts <= 14879639146403495l)] " +
+                "select sid, ts " +
+                "insert into filteredSensorStream;", 1));
+        
+        addQuery(new TestQuery("from sensorStream[sid != '97' and sid != '98' and sid != '99' and sid != '100'] " +
+                "select sid, ts " +
+                "insert into filteredSensorStream;", 0));
     }
     
     public void addCallbacks(ExecutionPlanRuntime executionPlanRuntime) {
