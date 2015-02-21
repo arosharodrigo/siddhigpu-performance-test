@@ -54,11 +54,13 @@ public class EventSender implements Runnable {
     public void printStatistics() {
         System.out.println(new StringBuilder()
         .append("QueuePublishLatency ExecutionPlan=").append(senderId).append(" [")
-        .append(UsecaseRunner.testConfigurations).append("|length=")
-        .append(qmPublishLatency.getValues().length).append("]")
-        .append(" 10=").append(f.format(qmPublishLatency.getPercentile(10)))
-        .append(" 90=").append(f.format(qmPublishLatency.getPercentile(90)))
-        .append(" Mean=").append(f.format(qmPublishLatency.getMean())).toString());
+        .append(UsecaseRunner.testConfigurations)
+        .append("|length=").append(qmPublishLatency.getValues().length)
+        .append("|Avg=").append(f.format(qmPublishLatency.getMean()))
+        .append("|Min=").append(f.format(qmPublishLatency.getMin()))
+        .append("|Max=").append(f.format(qmPublishLatency.getMax()))
+        .append("|10=").append(f.format(qmPublishLatency.getPercentile(10)))
+        .append("|90=").append(f.format(qmPublishLatency.getPercentile(90))).append("]").toString());
         
 //        + " Max=" + f.format(qmPublishLatency.getMax())
 
