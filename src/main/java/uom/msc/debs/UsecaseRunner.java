@@ -20,6 +20,28 @@ import org.wso2.siddhi.core.stream.input.InputHandler;
 public class UsecaseRunner {
     private static final Logger log = Logger.getLogger(UsecaseRunner.class);
     private static Options cliOptions;
+    public static String testConfigurations;
+    
+    private SiddhiManager siddhiManager = null;
+    private ExecutionPlanRuntime executionPlanRuntimes[] = null;
+    private Thread eventSenderThreads[] = null;
+    private InputFileReader fileReader = null;
+    
+    boolean asyncEnabled = true;
+    boolean gpuEnabled = false;
+    int defaultBufferSize = 1024;
+    int threadPoolSize = 4;
+    int eventBlockSize = 256;
+    boolean softBatchScheduling = true;
+    int maxEventBatchSize = 1024;
+    int minEventBatchSize = 32;
+    int workSize = 0;
+    String inputEventFilePath = null;
+    String usecaseName = null;
+    String executionPlanName = null;
+    int usecaseCountPerExecPlan = 0;
+    int execPlanCount = 0;
+    boolean multiDevice = false;
     
     private static Usecase[] getUsecases(int execPlanId, String usecaseName, int usecaseCountPerExecPlan) {
 
@@ -108,50 +130,14 @@ public class UsecaseRunner {
         return execString.toString();
     }
     
-    
-    private static void Help() {
-        // This prints out some help
-        HelpFormatter formater = new HelpFormatter();
-        formater.printHelp("UsecaseRunner", cliOptions);
-        System.exit(0);
+    public UsecaseRunner() {
+        
+        siddhiManager = new SiddhiManager();
     }
     
-    public static void main(String [] args) throws InterruptedException {
-        cliOptions = new Options();
-        cliOptions.addOption("a", "enable-async", true, "Enable Async processing");
-        cliOptions.addOption("g", "enable-gpu", true, "Enable GPU processing");
-        cliOptions.addOption("r", "ringbuffer-size", true, "Disruptor RingBuffer size - in power of two");
-        cliOptions.addOption("Z", "batch-max-size", true, "GPU Event batch max size");
-        cliOptions.addOption("z", "batch-min-size", true, "GPU Event batch min size");
-        cliOptions.addOption("t", "threadpool-size", true, "Executor service pool size");
-        cliOptions.addOption("b", "events-per-tblock", true, "Number of Events per thread block in GPU");
-        cliOptions.addOption("s", "strict-batch-scheduling", true, "Strict batch size policy");
-        cliOptions.addOption("w", "work-size", true, "Number of events processed by each GPU thread - 0=default");
-        cliOptions.addOption("i", "input-file", true, "Input events file path");
-        cliOptions.addOption("u", "usecase", true, "Name of the usecase");
-        cliOptions.addOption("p", "execplan", true, "Name of the ExecutionPlan");
-        cliOptions.addOption("c", "usecase-count", true, "Usecase count per ExecutionPlan");
-        cliOptions.addOption("x", "execplan-count", true, "ExecutionPlan count");
-        cliOptions.addOption("m", "use-multidevice", true, "Use multiple GPU devices");
-        
+    public void configure(String args[]) {
         CommandLineParser cliParser = new BasicParser();
         CommandLine cmd = null;
-        
-        boolean asyncEnabled = true;
-        boolean gpuEnabled = false;
-        int defaultBufferSize = 1024;
-        int threadPoolSize = 4;
-        int eventBlockSize = 256;
-        boolean softBatchScheduling = true;
-        int maxEventBatchSize = 1024;
-        int minEventBatchSize = 32;
-        int workSize = 0;
-        String inputEventFilePath = null;
-        String usecaseName = null;
-        String executionPlanName = null;
-        int usecaseCountPerExecPlan = 0;
-        int execPlanCount = 0;
-        boolean multiDevice = false;
         
         try {
             cmd = cliParser.parse(cliOptions, args);
@@ -233,18 +219,23 @@ public class UsecaseRunner {
                 "|SoftBatchScheduling=" + softBatchScheduling + 
                 "]");
         
-        SiddhiManager siddhiManager = new SiddhiManager();
-        siddhiManager.getSiddhiContext().setEventBufferSize(defaultBufferSize); //.setDefaultEventBufferSize(defaultBufferSize);
-        siddhiManager.getSiddhiContext().setExecutorService(new ThreadPoolExecutor(threadPoolSize, Integer.MAX_VALUE,
-                60L, TimeUnit.SECONDS,
-                new LinkedBlockingDeque<Runnable>()));
+        String mode = (gpuEnabled ? (multiDevice ? "gpu_md" : "gpu_sd") : (asyncEnabled ? "cpu_mt" : "cpu_st"));
+        testConfigurations = "xpc=" + execPlanCount + "|uc=" + usecaseCountPerExecPlan  
+                + "|mode=" + mode + "|rb=" + defaultBufferSize + "|bs=" + eventBlockSize + "|bmin=" + minEventBatchSize
+                + "|bmax=" + maxEventBatchSize; 
+        
+        siddhiManager.getSiddhiContext().setEventBufferSize(defaultBufferSize); 
+        siddhiManager.getSiddhiContext().setThreadPoolInitSize(threadPoolSize);
+//        siddhiManager.getSiddhiContext().setExecutorService(new ThreadPoolExecutor(threadPoolSize, Integer.MAX_VALUE,
+//                60L, TimeUnit.SECONDS,
+//                new LinkedBlockingDeque<Runnable>()));
 //                Executors.new newFixedThreadPool(threadPoolSize);
-        siddhiManager.getSiddhiContext().setScheduledExecutorService(Executors.newScheduledThreadPool(threadPoolSize));
+//        siddhiManager.getSiddhiContext().setScheduledExecutorService(Executors.newScheduledThreadPool(threadPoolSize));
         
-        ExecutionPlanRuntime executionPlanRuntimes[] = new ExecutionPlanRuntime[execPlanCount];
-        Thread eventSenderThreads[] = new Thread[execPlanCount];
+        executionPlanRuntimes = new ExecutionPlanRuntime[execPlanCount];
+        eventSenderThreads = new Thread[execPlanCount];
         
-        InputFileReader fileReader = new InputFileReader(inputEventFilePath);
+        fileReader = new InputFileReader(inputEventFilePath, this);
         
         for(int i=0; i<execPlanCount; ++i) {
             Usecase usecases[] = getUsecases(i, usecaseName, usecaseCountPerExecPlan);
@@ -260,12 +251,15 @@ public class UsecaseRunner {
             InputHandler inputHandlerSensorStream = executionPlanRuntimes[i].getInputHandler("sensorStream");
             executionPlanRuntimes[i].start();
             
-            EventSender sensorEventSender = new EventSender(inputHandlerSensorStream);
+            EventSender sensorEventSender = new EventSender(i, inputHandlerSensorStream);
             eventSenderThreads[i] = new Thread(sensorEventSender);
             
-            fileReader.addQueue(sensorEventSender.getQueue());
+//            fileReader.addQueue(sensorEventSender.getQueue());
+            fileReader.addEventSender(sensorEventSender);
         }
-        
+    }
+    
+    public void start() throws InterruptedException {
         for(Thread t: eventSenderThreads) {
             t.start();
         }
@@ -277,6 +271,44 @@ public class UsecaseRunner {
             t.join();
         }
         fileReaderThread.join();
+    }
+    
+    public void onEnd() {
+        System.out.println("ExecutionPlan : name=" + executionPlanName + " OnEnd");
+        
+        for(ExecutionPlanRuntime execplan : executionPlanRuntimes) {
+            execplan.shutdown();
+        }
+    }
+    
+    private static void Help() {
+        // This prints out some help
+        HelpFormatter formater = new HelpFormatter();
+        formater.printHelp("UsecaseRunner", cliOptions);
+        System.exit(0);
+    }
+    
+    public static void main(String [] args) throws InterruptedException {
+        cliOptions = new Options();
+        cliOptions.addOption("a", "enable-async", true, "Enable Async processing");
+        cliOptions.addOption("g", "enable-gpu", true, "Enable GPU processing");
+        cliOptions.addOption("r", "ringbuffer-size", true, "Disruptor RingBuffer size - in power of two");
+        cliOptions.addOption("Z", "batch-max-size", true, "GPU Event batch max size");
+        cliOptions.addOption("z", "batch-min-size", true, "GPU Event batch min size");
+        cliOptions.addOption("t", "threadpool-size", true, "Executor service pool size");
+        cliOptions.addOption("b", "events-per-tblock", true, "Number of Events per thread block in GPU");
+        cliOptions.addOption("s", "strict-batch-scheduling", true, "Strict batch size policy");
+        cliOptions.addOption("w", "work-size", true, "Number of events processed by each GPU thread - 0=default");
+        cliOptions.addOption("i", "input-file", true, "Input events file path");
+        cliOptions.addOption("u", "usecase", true, "Name of the usecase");
+        cliOptions.addOption("p", "execplan", true, "Name of the ExecutionPlan");
+        cliOptions.addOption("c", "usecase-count", true, "Usecase count per ExecutionPlan");
+        cliOptions.addOption("x", "execplan-count", true, "ExecutionPlan count");
+        cliOptions.addOption("m", "use-multidevice", true, "Use multiple GPU devices");
+        
+        UsecaseRunner ucRunner = new UsecaseRunner();
+        ucRunner.configure(args);
+        ucRunner.start();
         
         System.exit(0);
     }

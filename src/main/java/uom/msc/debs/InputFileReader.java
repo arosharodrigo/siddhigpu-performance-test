@@ -4,9 +4,10 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.wso2.siddhi.core.event.Event;
 
@@ -15,18 +16,27 @@ public class InputFileReader implements Runnable {
     public static final long GAME_START_TIME_PS = 10753295594424116L;
     public static final long FIRST_HALF_END_TIME_PS = 12557295594424116L;
     public static final long SECOND_HALF_START_TIME_PS = 13086639146403495L;
-    public static final long GAME_END_TIME_PS = 14879639146403495L;
+    public static final long GAME_END_TIME_PS = 14879639146403495L; 
+    public static final long DATA_END_TIME_PS = 14893948418670216L;
 
+    private DecimalFormat f = new DecimalFormat("#.##");
     private String filePath;
-    private List<BlockingQueue<Event>> blockingQueues = new ArrayList<BlockingQueue<Event>>();
+    private UsecaseRunner usecaseRunner;
+//    private List<BlockingQueue<Event>> blockingQueues = new ArrayList<BlockingQueue<Event>>();
+    private List<EventSender> eventSenders = new ArrayList<EventSender>();
 
-    public InputFileReader(String filePath) {
+    public InputFileReader(String filePath, UsecaseRunner usecaseRunner) {
         super();
         this.filePath = filePath;
+        this.usecaseRunner = usecaseRunner;
     }
 
-    public void addQueue(BlockingQueue<Event> queue) {
-        blockingQueues.add(queue);
+//    public void addQueue(BlockingQueue<Event> queue) {
+//        blockingQueues.add(queue);
+//    }
+    
+    public void addEventSender(EventSender sender) {
+        eventSenders.add(sender);
     }
 
     public void run() {
@@ -70,8 +80,12 @@ public class InputFileReader implements Runnable {
 
                 //System.out.println(v_kmh + " " + a_ms);
 
-                for(BlockingQueue<Event> q : blockingQueues) {
-                    q.put(new Event(System.currentTimeMillis(), data));
+//                for(BlockingQueue<Event> q : blockingQueues) {
+//                    q.put(new Event(System.currentTimeMillis(), data));
+//                }
+                
+                for(EventSender sender : eventSenders) {
+                    sender.SendEvent(new Event(System.currentTimeMillis(), data));
                 }
 
                 count++;
@@ -87,17 +101,40 @@ public class InputFileReader implements Runnable {
             boolean isAllDOne = false;
             while (!isAllDOne) {
                 isAllDOne = true;
-                for(BlockingQueue<Event> q : blockingQueues) {
-                    if(!q.isEmpty()) {
+//                for(BlockingQueue<Event> q : blockingQueues) {
+//                    if(!q.isEmpty()) {
+//                        isAllDOne = false;
+//                        break;
+//                    }
+//                }
+                for(EventSender sender : eventSenders) {
+                    if(!sender.isQueueEmpty()) {
                         isAllDOne = false;
                         break;
                     }
                 }
                 Thread.sleep(10);
             }
-            long currentTime = System.currentTimeMillis();
-            System.out.println("Processing took " + (currentTime - start) + " ms and throughput = " + (1000 * count / ((currentTime - start))) + " eps");
-
+            long end = System.currentTimeMillis();
+            long millis = end - start;
+            String value = String.format("%d min, %d sec, %d msec",
+                    TimeUnit.MILLISECONDS.toMinutes(millis),
+                    TimeUnit.MILLISECONDS.toSeconds(millis) - TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(millis)),
+                    millis - TimeUnit.SECONDS.toMillis(TimeUnit.MILLISECONDS.toSeconds(millis)));
+            final long tsMs = (DATA_END_TIME_PS - DATA_START_TIME_PS) / 1000000000;
+            double expectedThroughput = count * 1000.0f / tsMs;
+            
+            System.out.println("EventConsume [" + UsecaseRunner.testConfigurations + 
+                    "|TimeMs=" + millis + "|ThroughputEPS=" + f.format(1000.0f * count / millis) + 
+                    "|RealtimeMs=" + tsMs + "|RealThroughputEPS=" + f.format(expectedThroughput) + 
+                    "|Speedup=" + f.format(tsMs / millis) + "]");      
+            
+            for(EventSender sender : eventSenders) {
+                sender.printStatistics();
+            }
+            
+            br.close();
+            
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -114,6 +151,9 @@ public class InputFileReader implements Runnable {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            
+            usecaseRunner.onEnd();
+            
             System.out.println("System shutdown");
             System.exit(0);
         }

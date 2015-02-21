@@ -4,13 +4,15 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+
 public class OutputPerfromanceCalculator {
     String name;
     int count = 0;
     int eventCount = 0;
     int prevEventCount = 0;
     volatile long start = System.currentTimeMillis();
-    final List<Double> throughputList = new ArrayList<Double>();
+//    private final DescriptiveStatistics statistics = new DescriptiveStatistics();
     final DecimalFormat decimalFormat = new DecimalFormat("###.##");
     
     public OutputPerfromanceCalculator(String name) {
@@ -23,34 +25,23 @@ public class OutputPerfromanceCalculator {
         if (count % 1000000 == 0) {
             long end = System.currentTimeMillis();
             double tp = ((eventCount - prevEventCount) * 1000.0) / (end - start);
-            throughputList.add(tp);
+//            statistics.addValue(tp);
             System.out.println(name + " Throughput = " + decimalFormat.format(tp) + " Event/sec " + (eventCount - prevEventCount));
             start = end;
             prevEventCount = eventCount;
         }
     }
     
-    public double getAverageThroughput() {
-        double totalThroughput = 0;
-        
-        for (Double tp : throughputList) {
-            totalThroughput += tp;
-        }
-        
-        double avgThroughput = totalThroughput / throughputList.size();
-        
-        return avgThroughput;
-    }
-    
-    public void printAverageThroughput() {
-        double totalThroughput = 0;
-        
-        for (Double tp : throughputList) {
-            totalThroughput += tp;
-        }
-        
-        double avgThroughput = totalThroughput / throughputList.size();
-        
-        System.out.println(name + " AvgThroughput = " + avgThroughput + " Event/sec");
-    }
+//    public double getAverageThroughput() {
+//        return statistics.getMean();
+//    }
+//    
+//    public DescriptiveStatistics getStatistics() {
+//        return statistics;
+//    }
+//    
+//    public void printStatistics() {
+//        System.out.println(name + "ThroughputEPS Avg=" + decimalFormat.format(statistics.getMean()) +
+//                "|Min=" + decimalFormat.format(statistics.getMin()) + "|Max=" + decimalFormat.format(statistics.getMax()));
+//    }
 }
