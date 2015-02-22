@@ -299,6 +299,7 @@ public class UsecaseRunner {
         
         System.out.println(new StringBuilder()
         .append("EventProcessTroughputEPS ExecutionPlan=").append(executionPlanName)
+        .append("|").append(UsecaseRunner.testConfigurations)
         .append("|DatasetCount=").append(statList.size())
         .append("|length=").append(totalStatistics.getN())
         .append("|Avg=").append(decimalFormat.format(totalStatistics.getMean()))
