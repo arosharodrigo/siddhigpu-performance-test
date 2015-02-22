@@ -1,5 +1,7 @@
 package uom.msc.debs;
 
+import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -12,6 +14,7 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.log4j.Logger;
 import org.wso2.siddhi.core.ExecutionPlanRuntime;
 import org.wso2.siddhi.core.SiddhiManager;
@@ -276,9 +279,35 @@ public class UsecaseRunner {
     public void onEnd() {
         System.out.println("ExecutionPlan : name=" + executionPlanName + " OnEnd");
         
+        List<DescriptiveStatistics> statList  = new ArrayList<DescriptiveStatistics>();
+        for(ExecutionPlanRuntime execplan : executionPlanRuntimes) {
+            execplan.getStatistics(statList);
+        }
+        
+        DescriptiveStatistics totalStatistics = new DescriptiveStatistics();
+        for(DescriptiveStatistics stat : statList) {
+            for(Double d : stat.getValues()) {
+                totalStatistics.addValue(d); 
+            }
+        }
+        
         for(ExecutionPlanRuntime execplan : executionPlanRuntimes) {
             execplan.shutdown();
         }
+        
+        final DecimalFormat decimalFormat = new DecimalFormat("###.##"); 
+        
+        System.out.println(new StringBuilder()
+        .append("EventProcessTroughputEPS ExecutionPlan=").append(executionPlanName)
+        .append("|DatasetCount=").append(statList.size())
+        .append("|length=").append(totalStatistics.getN())
+        .append("|Avg=").append(decimalFormat.format(totalStatistics.getMean()))
+        .append("|Min=").append(decimalFormat.format(totalStatistics.getMin()))
+        .append("|Max=").append(decimalFormat.format(totalStatistics.getMax()))
+        .append("|Var=").append(decimalFormat.format(totalStatistics.getVariance()))
+        .append("|StdDev=").append(decimalFormat.format(totalStatistics.getStandardDeviation()))
+        .append("|10=").append(decimalFormat.format(totalStatistics.getPercentile(10)))
+        .append("|90=").append(decimalFormat.format(totalStatistics.getPercentile(90))).toString());
     }
     
     private static void Help() {
