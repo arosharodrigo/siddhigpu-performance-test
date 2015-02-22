@@ -305,7 +305,7 @@ public class UsecaseRunner {
         .append("|Avg=").append(decimalFormat.format(totalStatistics.getMean()))
         .append("|Min=").append(decimalFormat.format(totalStatistics.getMin()))
         .append("|Max=").append(decimalFormat.format(totalStatistics.getMax()))
-        .append("|Var=").append(decimalFormat.format(totalStatistics.getVariance()))
+//        .append("|Var=").append(decimalFormat.format(totalStatistics.getVariance()))
         .append("|StdDev=").append(decimalFormat.format(totalStatistics.getStandardDeviation()))
         .append("|10=").append(decimalFormat.format(totalStatistics.getPercentile(10)))
         .append("|90=").append(decimalFormat.format(totalStatistics.getPercentile(90))).toString());
