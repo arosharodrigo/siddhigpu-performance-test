@@ -14,7 +14,9 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.math3.stat.descriptive.AggregateSummaryStatistics;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.commons.math3.stat.descriptive.StatisticalSummaryValues;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.log4j.Logger;
 import org.wso2.siddhi.core.ExecutionPlanRuntime;
@@ -280,18 +282,19 @@ public class UsecaseRunner {
     public void onEnd() {
         System.out.println("ExecutionPlan : name=" + executionPlanName + " OnEnd");
         
-        List<DescriptiveStatistics> statList  = new ArrayList<DescriptiveStatistics>();
+        List<SummaryStatistics> statList  = new ArrayList<SummaryStatistics>();
         for(ExecutionPlanRuntime execplan : executionPlanRuntimes) {
             execplan.getStatistics(statList);
         }
         
 //        DescriptiveStatistics totalStatistics = new DescriptiveStatistics();
-        SummaryStatistics totalStatistics = new SummaryStatistics();
-        for(DescriptiveStatistics stat : statList) {
-            for(Double d : stat.getValues()) {
-                totalStatistics.addValue(d); 
-            }
-        }
+//        SummaryStatistics totalStatistics = new SummaryStatistics();
+//        for(DescriptiveStatistics stat : statList) {
+//            for(Double d : stat.getValues()) {
+//                totalStatistics.addValue(d); 
+//            }
+//        }
+        StatisticalSummaryValues totalStatistics = AggregateSummaryStatistics.aggregate(statList);
         
         for(ExecutionPlanRuntime execplan : executionPlanRuntimes) {
             execplan.shutdown();
@@ -307,7 +310,7 @@ public class UsecaseRunner {
         .append("|Avg=").append(decimalFormat.format(totalStatistics.getMean()))
         .append("|Min=").append(decimalFormat.format(totalStatistics.getMin()))
         .append("|Max=").append(decimalFormat.format(totalStatistics.getMax()))
-//        .append("|Var=").append(decimalFormat.format(totalStatistics.getVariance()))
+        .append("|Var=").append(decimalFormat.format(totalStatistics.getVariance()))
         .append("|StdDev=").append(decimalFormat.format(totalStatistics.getStandardDeviation())).toString());
 //        .append("|10=").append(decimalFormat.format(totalStatistics.getPercentile(10)))
 //        .append("|90=").append(decimalFormat.format(totalStatistics.getPercentile(90))).toString());
