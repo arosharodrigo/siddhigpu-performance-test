@@ -15,6 +15,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.log4j.Logger;
 import org.wso2.siddhi.core.ExecutionPlanRuntime;
 import org.wso2.siddhi.core.SiddhiManager;
@@ -284,7 +285,8 @@ public class UsecaseRunner {
             execplan.getStatistics(statList);
         }
         
-        DescriptiveStatistics totalStatistics = new DescriptiveStatistics();
+//        DescriptiveStatistics totalStatistics = new DescriptiveStatistics();
+        SummaryStatistics totalStatistics = new SummaryStatistics();
         for(DescriptiveStatistics stat : statList) {
             for(Double d : stat.getValues()) {
                 totalStatistics.addValue(d); 
@@ -306,9 +308,9 @@ public class UsecaseRunner {
         .append("|Min=").append(decimalFormat.format(totalStatistics.getMin()))
         .append("|Max=").append(decimalFormat.format(totalStatistics.getMax()))
 //        .append("|Var=").append(decimalFormat.format(totalStatistics.getVariance()))
-        .append("|StdDev=").append(decimalFormat.format(totalStatistics.getStandardDeviation()))
-        .append("|10=").append(decimalFormat.format(totalStatistics.getPercentile(10)))
-        .append("|90=").append(decimalFormat.format(totalStatistics.getPercentile(90))).toString());
+        .append("|StdDev=").append(decimalFormat.format(totalStatistics.getStandardDeviation())).toString());
+//        .append("|10=").append(decimalFormat.format(totalStatistics.getPercentile(10)))
+//        .append("|90=").append(decimalFormat.format(totalStatistics.getPercentile(90))).toString());
     }
     
     private static void Help() {
