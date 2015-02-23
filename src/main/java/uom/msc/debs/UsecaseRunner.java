@@ -106,7 +106,7 @@ public class UsecaseRunner {
             if(!useMultiDevice) {
                 queries = usecase.getSingleDeviceQueries();
             } else {
-                queries = usecase.getSingleDeviceQueries();
+                queries = usecase.getMultiDeviceQueries();
             }
             
             for(TestQuery query : queries) {
