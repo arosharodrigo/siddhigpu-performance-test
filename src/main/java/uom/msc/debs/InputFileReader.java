@@ -123,11 +123,12 @@ public class InputFileReader implements Runnable {
                     millis - TimeUnit.SECONDS.toMillis(TimeUnit.MILLISECONDS.toSeconds(millis)));
             final long tsMs = (DATA_END_TIME_PS - DATA_START_TIME_PS) / 1000000000;
             double expectedThroughput = count * 1000.0f / tsMs;
+            double speedup = (double)tsMs / (double)millis;
             
             System.out.println("EventConsume [" + UsecaseRunner.testConfigurations + 
                     "|TimeMs=" + millis + "|ThroughputEPS=" + f.format(1000.0f * count / millis) + 
                     "|RealtimeMs=" + tsMs + "|RealThroughputEPS=" + f.format(expectedThroughput) + 
-                    "|Speedup=" + f.format(tsMs / millis) + "]");      
+                    "|Speedup=" + f.format(speedup) + "]");      
             
             for(EventSender sender : eventSenders) {
                 sender.printStatistics();
