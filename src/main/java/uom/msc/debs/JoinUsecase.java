@@ -10,11 +10,11 @@ public class JoinUsecase extends Usecase {
     public JoinUsecase(int execPlanId) {
         super(execPlanId);
         
-        addSingleDeviceQuery(new TestQuery("ballStream", "from sensorStream[sid == 4 or sid == 8 or sid == 10 or sid == 12] "
+        addSingleDeviceQuery(new TestQuery("ballStream", "from sensorStream[sid == '4' or sid == '8' or sid == '10' or sid == '12'] "
                 + "select sid, ts, x, y "
                 + "insert into ballStream;", 1));
         
-        addSingleDeviceQuery(new TestQuery("playersStream", "from sensorStream[sid != 4 and sid != 8 and sid != 10 and sid != 12 and sid != 105 and sid != 106] "
+        addSingleDeviceQuery(new TestQuery("playersStream", "from sensorStream[sid != '4' and sid != '8' and sid != '10' and sid != '12' and sid != '105' and sid != '106'] "
                 + "select sid, ts, x, y "
                 + "insert into playersStream;", 1));
 
@@ -25,11 +25,11 @@ public class JoinUsecase extends Usecase {
                 "select b.sid as psid, b.ts as pts, b.x as px, b.y as py " +
                 "insert into nearBallStream;", 1));
         
-        addMultiDeviceQuery(new TestQuery("ballStream", "from sensorStream[sid == 4 or sid == 8 or sid == 10 or sid == 12] "
+        addMultiDeviceQuery(new TestQuery("ballStream", "from sensorStream[sid == '4' or sid == '8' or sid == '10' or sid == '12'] "
                 + "select sid, ts, x, y "
                 + "insert into ballStream;", 0));
         
-        addMultiDeviceQuery(new TestQuery("playersStream", "from sensorStream[sid != 4 and sid != 8 and sid != 10 and sid != 12 and sid != 105 and sid != 106] "
+        addMultiDeviceQuery(new TestQuery("playersStream", "from sensorStream[sid != '4' and sid != '8' and sid != '10' and sid != '12' and sid != '105' and sid != '106'] "
                 + "select sid, ts, x, y "
                 + "insert into playersStream;", 0));
 
