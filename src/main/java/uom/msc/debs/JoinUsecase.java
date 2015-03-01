@@ -19,7 +19,7 @@ public class JoinUsecase extends Usecase {
                 + "insert into playersStream;", 1));
 
         addSingleDeviceQuery(new TestQuery("nearBall", "from ballStream#window.length(2000) as a " +
-                "join playersStream#window.length(200) b " +
+                "join playersStream#window.length(200) as b " +
                 "on a.x == b.x and a.y == b.y " +
                 "within 100 millisec " +
                 "select b.sid as psid, b.ts as pts, b.x as px, b.y as py " +
@@ -34,7 +34,7 @@ public class JoinUsecase extends Usecase {
                 + "insert into playersStream;", 0));
 
         addMultiDeviceQuery(new TestQuery("nearBall", "from ballStream#window.length(2000) as a " +
-                "join playersStream#window.length(200) b " +
+                "join playersStream#window.length(200) as b " +
                 "on a.x == b.x and a.y == b.y " +
                 "within 100 millisec " +
                 "select b.sid as psid, b.ts as pts, b.x as px, b.y as py " +
