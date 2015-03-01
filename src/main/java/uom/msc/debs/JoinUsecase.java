@@ -49,7 +49,7 @@ public class JoinUsecase extends Usecase {
 
     @Override
     public void addCallbacks(ExecutionPlanRuntime executionPlanRuntime) {
-        performanceCalculator1 = new OutputPerfromanceCalculator("nearBallStream", 1024);
+        performanceCalculator1 = new OutputPerfromanceCalculator("nearBallStream", 4096);
         performanceCalculator2 = new OutputPerfromanceCalculator("ballStream", 1024);
         performanceCalculator3 = new OutputPerfromanceCalculator("playersStream", 1024);
         
@@ -62,23 +62,23 @@ public class JoinUsecase extends Usecase {
             }
         });
         
-        executionPlanRuntime.addCallback("ballStream", new StreamCallback() {
-            @Override
-            public void receive(Event[] inEvents) {
-                performanceCalculator2.calculate(inEvents.length);
-//                System.out.print("ballStream : ");
-//                EventPrinter.print(inEvents);
-            }
-        });
-        
-        executionPlanRuntime.addCallback("playersStream", new StreamCallback() {
-            @Override
-            public void receive(Event[] inEvents) {
-                performanceCalculator3.calculate(inEvents.length);
-//                System.out.print("playersStream : ");
-//                EventPrinter.print(inEvents);
-            }
-        });
+//        executionPlanRuntime.addCallback("ballStream", new StreamCallback() {
+//            @Override
+//            public void receive(Event[] inEvents) {
+//                performanceCalculator2.calculate(inEvents.length);
+////                System.out.print("ballStream : ");
+////                EventPrinter.print(inEvents);
+//            }
+//        });
+//        
+//        executionPlanRuntime.addCallback("playersStream", new StreamCallback() {
+//            @Override
+//            public void receive(Event[] inEvents) {
+//                performanceCalculator3.calculate(inEvents.length);
+////                System.out.print("playersStream : ");
+////                EventPrinter.print(inEvents);
+//            }
+//        });
     }
 
 }
