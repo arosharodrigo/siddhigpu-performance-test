@@ -6,7 +6,9 @@ import org.wso2.siddhi.core.stream.output.StreamCallback;
 import org.wso2.siddhi.core.util.EventPrinter;
 
 public class JoinUsecase extends Usecase {
-    private static OutputPerfromanceCalculator performanceCalculator = null;
+    private static OutputPerfromanceCalculator performanceCalculator1 = null;
+    private static OutputPerfromanceCalculator performanceCalculator2 = null;
+    private static OutputPerfromanceCalculator performanceCalculator3 = null;
     
     public JoinUsecase(int execPlanId) {
         super(execPlanId);
@@ -21,6 +23,7 @@ public class JoinUsecase extends Usecase {
 
         addSingleDeviceQuery(new TestQuery("nearBall", "from ballStream#window.length(2000) as a " +
                 "join playersStream#window.length(200) as b " +
+//                "on (((a.x - b.x) < 2) or ((b.x - a.x) < 2)) and (((a.y - b.y) < 2) or ((b.y - a.y) < 2)) " +
                 "on a.x == b.x and a.y == b.y " +
                 "within 100 millisec " +
                 "select b.sid as psid, b.ts as pts, b.x as px, b.y as py " +
@@ -36,6 +39,7 @@ public class JoinUsecase extends Usecase {
 
         addMultiDeviceQuery(new TestQuery("nearBall", "from ballStream#window.length(2000) as a " +
                 "join playersStream#window.length(200) as b " +
+//                "on (((a.x - b.x) < 2) or ((b.x - a.x) < 2)) and (((a.y - b.y) < 2) or ((b.y - a.y) < 2)) " +
                 "on a.x == b.x and a.y == b.y " +
                 "within 100 millisec " +
                 "select b.sid as psid, b.ts as pts, b.x as px, b.y as py " +
@@ -45,13 +49,34 @@ public class JoinUsecase extends Usecase {
 
     @Override
     public void addCallbacks(ExecutionPlanRuntime executionPlanRuntime) {
-        performanceCalculator = new OutputPerfromanceCalculator("nearBallStream");
+        performanceCalculator1 = new OutputPerfromanceCalculator("nearBallStream", 1024);
+        performanceCalculator2 = new OutputPerfromanceCalculator("ballStream", 1024);
+        performanceCalculator3 = new OutputPerfromanceCalculator("playersStream", 1024);
         
         executionPlanRuntime.addCallback("nearBallStream", new StreamCallback() {
             @Override
             public void receive(Event[] inEvents) {
-//                performanceCalculator.calculate(inEvents.length);
-                EventPrinter.print(inEvents);
+                performanceCalculator1.calculate(inEvents.length);
+//                System.out.print("nearBallStream : ");
+//                EventPrinter.print(inEvents);
+            }
+        });
+        
+        executionPlanRuntime.addCallback("ballStream", new StreamCallback() {
+            @Override
+            public void receive(Event[] inEvents) {
+                performanceCalculator2.calculate(inEvents.length);
+//                System.out.print("ballStream : ");
+//                EventPrinter.print(inEvents);
+            }
+        });
+        
+        executionPlanRuntime.addCallback("playersStream", new StreamCallback() {
+            @Override
+            public void receive(Event[] inEvents) {
+                performanceCalculator3.calculate(inEvents.length);
+//                System.out.print("playersStream : ");
+//                EventPrinter.print(inEvents);
             }
         });
     }
