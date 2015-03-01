@@ -3,6 +3,7 @@ package uom.msc.debs;
 import org.wso2.siddhi.core.ExecutionPlanRuntime;
 import org.wso2.siddhi.core.event.Event;
 import org.wso2.siddhi.core.stream.output.StreamCallback;
+import org.wso2.siddhi.core.util.EventPrinter;
 
 public class JoinUsecase extends Usecase {
     private static OutputPerfromanceCalculator performanceCalculator = null;
@@ -49,8 +50,8 @@ public class JoinUsecase extends Usecase {
         executionPlanRuntime.addCallback("nearBallStream", new StreamCallback() {
             @Override
             public void receive(Event[] inEvents) {
-                performanceCalculator.calculate(inEvents.length);
-//                EventPrinter.print(inEvents);
+//                performanceCalculator.calculate(inEvents.length);
+                EventPrinter.print(inEvents);
             }
         });
     }
