@@ -1,6 +1,8 @@
 package uom.msc.debs;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -12,19 +14,24 @@ public class EventSender implements Runnable {
     private int senderId;
     private BlockingQueue<Event> queue = new LinkedBlockingQueue<Event>(2000000);
     private final DescriptiveStatistics qmPublishLatency = new DescriptiveStatistics();
-    private InputHandler inputHandler;
+    private List<InputHandler> inputHandlers = new ArrayList<InputHandler>();
     private DecimalFormat f = new DecimalFormat("#.##");
     
-    public EventSender(int senderId, InputHandler inputHandler) {
+    public EventSender(int senderId) {
         this.senderId = senderId;
-        this.inputHandler = inputHandler;
+    }
+    
+    public void addInputHandler(InputHandler inputHandler) {
+        inputHandlers.add(inputHandler);
     }
 
     public void run() {
         while (true) {
             try {
                 Event event = queue.take();
-                inputHandler.send(event);
+                for(InputHandler i : inputHandlers) {
+                    i.send(event);
+                }
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

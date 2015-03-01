@@ -30,7 +30,7 @@ public class UsecaseRunner {
     
     private SiddhiManager siddhiManager = null;
     private ExecutionPlanRuntime executionPlanRuntimes[] = null;
-    private Thread eventSenderThreads[] = null;
+    private Thread eventSenderThread = null;
     private InputFileReader fileReader = null;
     
     boolean asyncEnabled = true;
@@ -112,7 +112,7 @@ public class UsecaseRunner {
             for(TestQuery query : queries) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("@info(name = '" + query.queryId + usecaseIndex + "') ");
-                if(gpuEnabled)
+                if(gpuEnabled && query.cudaDeviceId >= 0)
                 {
                     sb.append("@gpu(")
                     .append("cuda.device='").append(query.cudaDeviceId).append("', ")
@@ -239,9 +239,11 @@ public class UsecaseRunner {
 //        siddhiManager.getSiddhiContext().setScheduledExecutorService(Executors.newScheduledThreadPool(threadPoolSize));
         
         executionPlanRuntimes = new ExecutionPlanRuntime[execPlanCount];
-        eventSenderThreads = new Thread[execPlanCount];
+        EventSender sensorEventSender = new EventSender(0);
+        eventSenderThread = new Thread(sensorEventSender);
         
         fileReader = new InputFileReader(inputEventFilePath, this);
+        fileReader.addEventSender(sensorEventSender);
         
         for(int i=0; i<execPlanCount; ++i) {
             Usecase usecases[] = getUsecases(i, usecaseName, usecaseCountPerExecPlan);
@@ -257,25 +259,19 @@ public class UsecaseRunner {
             InputHandler inputHandlerSensorStream = executionPlanRuntimes[i].getInputHandler("sensorStream");
             executionPlanRuntimes[i].start();
             
-            EventSender sensorEventSender = new EventSender(i, inputHandlerSensorStream);
-            eventSenderThreads[i] = new Thread(sensorEventSender);
+            sensorEventSender.addInputHandler(inputHandlerSensorStream);
             
 //            fileReader.addQueue(sensorEventSender.getQueue());
-            fileReader.addEventSender(sensorEventSender);
         }
     }
     
     public void start() throws InterruptedException {
-        for(Thread t: eventSenderThreads) {
-            t.start();
-        }
+        eventSenderThread.start();
         
         Thread fileReaderThread = new Thread(fileReader);
         fileReaderThread.start();
         
-        for(Thread t: eventSenderThreads) {
-            t.join();
-        }
+        eventSenderThread.join();
         fileReaderThread.join();
     }
     
