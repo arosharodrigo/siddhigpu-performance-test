@@ -49,9 +49,9 @@ public class JoinUsecase extends Usecase {
 
     @Override
     public void addCallbacks(ExecutionPlanRuntime executionPlanRuntime) {
-        performanceCalculator1 = new OutputPerfromanceCalculator("nearBallStream", 4096);
-        performanceCalculator2 = new OutputPerfromanceCalculator("ballStream", 1024);
-        performanceCalculator3 = new OutputPerfromanceCalculator("playersStream", 1024);
+        performanceCalculator1 = new OutputPerfromanceCalculator("nearBallStream", 1000000);
+//        performanceCalculator2 = new OutputPerfromanceCalculator("ballStream", 1024);
+//        performanceCalculator3 = new OutputPerfromanceCalculator("playersStream", 1024);
         
         executionPlanRuntime.addCallback("nearBallStream", new StreamCallback() {
             @Override
