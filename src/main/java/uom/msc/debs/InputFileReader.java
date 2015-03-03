@@ -62,7 +62,7 @@ public class InputFileReader implements Runnable {
 
 
                 Object[] data = new Object[]{
-                        dataStr[0], 
+                        dataStr[0].intern(),  // XXX: is OK to use interns?
                         time, 
                         Integer.valueOf(dataStr[2]),
                         Integer.valueOf(dataStr[3]), 

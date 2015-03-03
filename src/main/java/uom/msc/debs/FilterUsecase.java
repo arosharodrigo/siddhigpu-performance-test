@@ -33,7 +33,7 @@ public class FilterUsecase extends Usecase {
     }
     
     public void addCallbacks(ExecutionPlanRuntime executionPlanRuntime) {
-        performanceCalculator = new OutputPerfromanceCalculator("filteredSensorStream");
+        performanceCalculator = new OutputPerfromanceCalculator("filteredSensorStream", 1024);
         
         executionPlanRuntime.addCallback("filteredSensorStream", new StreamCallback() {
             @Override
