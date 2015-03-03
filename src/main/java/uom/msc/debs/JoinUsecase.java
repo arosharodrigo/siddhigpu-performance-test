@@ -23,26 +23,24 @@ public class JoinUsecase extends Usecase {
 
         addSingleDeviceQuery(new TestQuery("nearBall", "from ballStream#window.length(2000) as a " +
                 "join playersStream#window.length(200) as b " +
-//                "on (((a.x - b.x) < 2) or ((b.x - a.x) < 2)) and (((a.y - b.y) < 2) or ((b.y - a.y) < 2)) " +
-                "on a.x == b.x and a.y == b.y " +
+                "on a.x == b.x and a.y == b.y and a.ts > b.ts and (a.ts - b.ts < 1000000) " +
                 "within 50 millisec " +
-                "select b.sid as psid, b.ts as pts, b.x as px, b.y as py " +
+                "select b.sid as psid, a.sid as bsid, b.ts as pts, a.ts as bts, b.x as px, b.y as py, a.x as bx, a.y a by " +
                 "insert into nearBallStream;", 1));
         
         addMultiDeviceQuery(new TestQuery("ballStream", "from sensorStream[sid == '4' or sid == '8' or sid == '10' or sid == '12'] "
                 + "select sid, ts, x, y "
-                + "insert into ballStream;", 0));
+                + "insert into ballStream;", 1));
         
         addMultiDeviceQuery(new TestQuery("playersStream", "from sensorStream[sid != '4' and sid != '8' and sid != '10' and sid != '12' and sid != '105' and sid != '106'] "
                 + "select sid, ts, x, y "
-                + "insert into playersStream;", 0));
+                + "insert into playersStream;", 1));
 
         addMultiDeviceQuery(new TestQuery("nearBall", "from ballStream#window.length(2000) as a " +
                 "join playersStream#window.length(200) as b " +
-//                "on (((a.x - b.x) < 2) or ((b.x - a.x) < 2)) and (((a.y - b.y) < 2) or ((b.y - a.y) < 2)) " +
-                "on a.x == b.x and a.y == b.y " +
+                "on a.x == b.x and a.y == b.y and a.ts > b.ts and (a.ts - b.ts < 1000000) " +
                 "within 50 millisec " +
-                "select b.sid as psid, b.ts as pts, b.x as px, b.y as py " +
+                "select b.sid as psid, a.sid as bsid, b.ts as pts, a.ts as bts, b.x as px, b.y as py, a.x as bx, a.y a by " +
                 "insert into nearBallStream;", 1));
         
     }
