@@ -25,7 +25,7 @@ public class JoinUsecase extends Usecase {
                 "join playersStream#window.length(200) as b " +
                 "on a.x == b.x and a.y == b.y and a.ts > b.ts and (a.ts - b.ts < 1000000) " +
                 "within 50 millisec " +
-                "select b.sid as psid, a.sid as bsid, b.ts as pts, a.ts as bts, b.x as px, b.y as py, a.x as bx, a.y a by " +
+                "select b.sid as psid, a.sid as bsid, b.ts as pts, a.ts as bts, b.x as px, b.y as py, a.x as bx, a.y as by " +
                 "insert into nearBallStream;", 1));
         
         addMultiDeviceQuery(new TestQuery("ballStream", "from sensorStream[sid == '4' or sid == '8' or sid == '10' or sid == '12'] "
@@ -40,7 +40,7 @@ public class JoinUsecase extends Usecase {
                 "join playersStream#window.length(200) as b " +
                 "on a.x == b.x and a.y == b.y and a.ts > b.ts and (a.ts - b.ts < 1000000) " +
                 "within 50 millisec " +
-                "select b.sid as psid, a.sid as bsid, b.ts as pts, a.ts as bts, b.x as px, b.y as py, a.x as bx, a.y a by " +
+                "select b.sid as psid, a.sid as bsid, b.ts as pts, a.ts as bts, b.x as px, b.y as py, a.x as bx, a.y as by " +
                 "insert into nearBallStream;", 1));
         
     }
