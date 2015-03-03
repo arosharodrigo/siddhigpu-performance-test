@@ -30,7 +30,7 @@ public class WindowUsecase extends Usecase {
 
     @Override
     public void addCallbacks(ExecutionPlanRuntime executionPlanRuntime) {
-        performanceCalculator = new OutputPerfromanceCalculator("windowSensorStream");
+        performanceCalculator = new OutputPerfromanceCalculator("windowSensorStream", 1024);
         
         executionPlanRuntime.addCallback("windowSensorStream", new StreamCallback() {
             @Override

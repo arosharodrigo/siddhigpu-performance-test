@@ -12,7 +12,7 @@ public class FilterAndJoinUsecase extends Usecase {
 
     @Override
     public void addCallbacks(ExecutionPlanRuntime executionPlanRuntime) {
-        performanceCalculator = new OutputPerfromanceCalculator("filteredSensorStream");
+        performanceCalculator = new OutputPerfromanceCalculator("filteredSensorStream", 1024);
 
     }
 

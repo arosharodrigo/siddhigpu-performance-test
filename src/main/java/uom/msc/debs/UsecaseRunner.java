@@ -112,7 +112,7 @@ public class UsecaseRunner {
             for(TestQuery query : queries) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("@info(name = '" + query.queryId + usecaseIndex + "') ");
-                if(gpuEnabled)
+                if(gpuEnabled && query.cudaDeviceId >= 0)
                 {
                     sb.append("@gpu(")
                     .append("cuda.device='").append(query.cudaDeviceId).append("', ")

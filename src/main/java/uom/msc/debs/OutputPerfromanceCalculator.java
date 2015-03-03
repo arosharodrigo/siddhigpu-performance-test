@@ -11,18 +11,20 @@ public class OutputPerfromanceCalculator {
     int count = 0;
     int eventCount = 0;
     int prevEventCount = 0;
+    int batchCount = 0;
     volatile long start = System.currentTimeMillis();
 //    private final DescriptiveStatistics statistics = new DescriptiveStatistics();
     final DecimalFormat decimalFormat = new DecimalFormat("###.##");
     
-    public OutputPerfromanceCalculator(String name) {
+    public OutputPerfromanceCalculator(String name, int batchCount) {
         this.name = "<" + name + ">";
+        this.batchCount = batchCount;
     }
     
     public void calculate(int currentEventCount) {
         eventCount += currentEventCount;
         count++;
-        if (count % 1000000 == 0) {
+        if (count % batchCount == 0) {
             long end = System.currentTimeMillis();
             double tp = ((eventCount - prevEventCount) * 1000.0) / (end - start);
 //            statistics.addValue(tp);
