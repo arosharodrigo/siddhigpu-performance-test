@@ -8,6 +8,9 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
+
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -27,6 +30,7 @@ public class UsecaseRunner {
     private static final Logger log = Logger.getLogger(UsecaseRunner.class);
     private static Options cliOptions;
     public static String testConfigurations;
+    private static UsecaseRunner ucRunner;
     
     private SiddhiManager siddhiManager = null;
     private ExecutionPlanRuntime executionPlanRuntimes[] = null;
@@ -323,6 +327,7 @@ public class UsecaseRunner {
         System.exit(0);
     }
     
+    @SuppressWarnings("restriction")
     public static void main(String [] args) throws InterruptedException {
         cliOptions = new Options();
         cliOptions.addOption("a", "enable-async", true, "Enable Async processing");
@@ -341,9 +346,23 @@ public class UsecaseRunner {
         cliOptions.addOption("x", "execplan-count", true, "ExecutionPlan count");
         cliOptions.addOption("m", "use-multidevice", true, "Use multiple GPU devices");
         
-        UsecaseRunner ucRunner = new UsecaseRunner();
+        ucRunner = new UsecaseRunner();
         ucRunner.configure(args);
         ucRunner.start();
+        
+        Signal.handle(new Signal("INT"), new SignalHandler() {
+            public void handle(Signal sig) {
+                ucRunner.onEnd();
+                System.exit(-1);
+            }
+        });
+        
+        Signal.handle(new Signal("KILL"), new SignalHandler() {
+            public void handle(Signal sig) {
+                ucRunner.onEnd();
+                System.exit(-1);
+            }
+        });
         
         System.exit(0);
     }

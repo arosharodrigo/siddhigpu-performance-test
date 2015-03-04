@@ -12,7 +12,7 @@ public class WindowUsecase extends Usecase {
         super(execPlanId);
         
         addSingleDeviceQuery(new TestQuery("matchTimes", "from sensorStream#window.length(2000) " +
-                "select sid, ts " +
+                "select sid, ts, x, y " +
                 "insert into windowSensorStream;", 1));
         
         addSingleDeviceQuery(new TestQuery("players", "from sensorStream#window.length(10000) " +
@@ -20,7 +20,7 @@ public class WindowUsecase extends Usecase {
                 "insert into windowSensorStream;", 1));
         
         addMultiDeviceQuery(new TestQuery("matchTimes", "from sensorStream#window.length(1000) " +
-                "select sid, ts " +
+                "select sid, ts, x, y " +
                 "insert into windowSensorStream;", 1));
         
         addMultiDeviceQuery(new TestQuery("players", "from sensorStream#window.length(10000) " +
