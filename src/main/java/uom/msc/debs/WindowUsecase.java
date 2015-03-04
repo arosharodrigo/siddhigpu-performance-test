@@ -25,12 +25,12 @@ public class WindowUsecase extends Usecase {
         
         addMultiDeviceQuery(new TestQuery("players", "from sensorStream#window.length(10000) " +
                 "select sid, ts, x, y, z, v, a " +
-                "insert into windowSensorStream;", 0));
+                "insert into windowSensorStream;", 1));
     }
 
     @Override
     public void addCallbacks(ExecutionPlanRuntime executionPlanRuntime) {
-        performanceCalculator = new OutputPerfromanceCalculator("windowSensorStream", 1024);
+        performanceCalculator = new OutputPerfromanceCalculator("windowSensorStream", 102400);
         
         executionPlanRuntime.addCallback("windowSensorStream", new StreamCallback() {
             @Override
