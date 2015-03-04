@@ -11,12 +11,12 @@ public class WindowUsecase extends Usecase {
     public WindowUsecase(int execPlanId) {
         super(execPlanId);
         
-        addSingleDeviceQuery(new TestQuery("matchTimes", "from sensorStream#window.length(1000) " +
+        addSingleDeviceQuery(new TestQuery("matchTimes", "from sensorStream#window.length(2000) " +
                 "select sid, ts " +
                 "insert into windowSensorStream;", 1));
         
         addSingleDeviceQuery(new TestQuery("players", "from sensorStream#window.length(10000) " +
-                "select sid, ts, x, y, z, v, a " +
+                "select sid, ts, x, y " +
                 "insert into windowSensorStream;", 1));
         
         addMultiDeviceQuery(new TestQuery("matchTimes", "from sensorStream#window.length(1000) " +
@@ -24,13 +24,13 @@ public class WindowUsecase extends Usecase {
                 "insert into windowSensorStream;", 1));
         
         addMultiDeviceQuery(new TestQuery("players", "from sensorStream#window.length(10000) " +
-                "select sid, ts, x, y, z, v, a " +
+                "select sid, ts, x, y " +
                 "insert into windowSensorStream;", 1));
     }
 
     @Override
     public void addCallbacks(ExecutionPlanRuntime executionPlanRuntime) {
-        performanceCalculator = new OutputPerfromanceCalculator("windowSensorStream", 102400);
+        performanceCalculator = new OutputPerfromanceCalculator("windowSensorStream", 1024000);
         
         executionPlanRuntime.addCallback("windowSensorStream", new StreamCallback() {
             @Override
