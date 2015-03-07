@@ -41,9 +41,9 @@ public class FilterUsecase extends Usecase {
     }
     
     public void addCallbacks(ExecutionPlanRuntime executionPlanRuntime) {
-        performanceCalculator = new OutputPerfromanceCalculator("filteredSensorStream", 1024);
+        performanceCalculator = new OutputPerfromanceCalculator("ballStream", 1024);
         
-        executionPlanRuntime.addCallback("filteredSensorStream", new StreamCallback() {
+        executionPlanRuntime.addCallback("ballStream", new StreamCallback() {
             @Override
             public void receive(Event[] inEvents) {
                 performanceCalculator.calculate(inEvents.length);
