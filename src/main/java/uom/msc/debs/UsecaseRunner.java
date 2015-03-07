@@ -126,7 +126,7 @@ public class UsecaseRunner {
                     .append("block.size='").append(eventBlockSize).append("', ")
                     .append("batch.schedule='").append((softBatchScheduling ? "soft" : "hard")).append("', ")
                     .append("string.sizes='symbol=8', ")
-                    .append("work.size='").append(workSize).append("' ")
+                    .append("work.size='").append(workSize).append("', ")
                     .append("selector.workers='").append(selectorWorkerCount).append("' ")
                     .append(") ")
                     .append("@performance(batch.count='1000') ");
