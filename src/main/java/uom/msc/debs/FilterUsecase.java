@@ -12,31 +12,31 @@ public class FilterUsecase extends Usecase {
     public FilterUsecase(int execPlanId) {
         super(execPlanId);
         
-//        addSingleDeviceQuery(new TestQuery("ballStream", "from sensorStream[sid == '4' or sid == '8' or sid == '10' or sid == '12'] "
-//                + "select sid, ts, x, y "
-//                + "insert into ballStream;", 1));
-//        
+        addSingleDeviceQuery(new TestQuery("ballStream", "from sensorStream[sid == '4' or sid == '8' or sid == '10' or sid == '12'] "
+                + "select sid, ts, x, y "
+                + "insert into ballStream;", 1));
+        
 //        addSingleDeviceQuery(new TestQuery("playersStream", "from sensorStream[sid != '4' and sid != '8' and sid != '10' and sid != '12' and sid != '105' and sid != '106'] "
 //                + "select sid, ts, x, y "
 //                + "insert into playersStream;", 1));
         
-        addSingleDeviceQuery(new TestQuery("matchTimes", "from sensorStream[(ts >= 10753295594424116l and ts <= 12557295594424116l) or "
-                + "(ts >= 13086639146403495l and ts <= 14879639146403495l)] " +
-                "select sid, ts " +
-                "insert into filteredSensorStream;", 1));
-        
-        addSingleDeviceQuery(new TestQuery("players", "from sensorStream[sid != '97' and sid != '98' and sid != '99' and sid != '100'] " +
-                "select sid, ts " +
-                "insert into filteredSensorStream;", 1));
-        
-        addMultiDeviceQuery(new TestQuery("matchTimes", "from sensorStream[(ts >= 10753295594424116l and ts <= 12557295594424116l) or "
-                + "(ts >= 13086639146403495l and ts <= 14879639146403495l)] " +
-                "select sid, ts " +
-                "insert into filteredSensorStream;", 1));
-        
-        addMultiDeviceQuery(new TestQuery("players", "from sensorStream[sid != '97' and sid != '98' and sid != '99' and sid != '100'] " +
-                "select sid, ts " +
-                "insert into filteredSensorStream;", 1));
+//        addSingleDeviceQuery(new TestQuery("matchTimes", "from sensorStream[(ts >= 10753295594424116l and ts <= 12557295594424116l) or "
+//                + "(ts >= 13086639146403495l and ts <= 14879639146403495l)] " +
+//                "select sid, ts " +
+//                "insert into filteredSensorStream;", 1));
+//        
+//        addSingleDeviceQuery(new TestQuery("players", "from sensorStream[sid != '97' and sid != '98' and sid != '99' and sid != '100'] " +
+//                "select sid, ts " +
+//                "insert into filteredSensorStream;", 1));
+//        
+//        addMultiDeviceQuery(new TestQuery("matchTimes", "from sensorStream[(ts >= 10753295594424116l and ts <= 12557295594424116l) or "
+//                + "(ts >= 13086639146403495l and ts <= 14879639146403495l)] " +
+//                "select sid, ts " +
+//                "insert into filteredSensorStream;", 1));
+//        
+//        addMultiDeviceQuery(new TestQuery("players", "from sensorStream[sid != '97' and sid != '98' and sid != '99' and sid != '100'] " +
+//                "select sid, ts " +
+//                "insert into filteredSensorStream;", 1));
         
     }
     
