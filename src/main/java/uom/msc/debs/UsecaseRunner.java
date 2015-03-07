@@ -46,6 +46,7 @@ public class UsecaseRunner {
     int maxEventBatchSize = 1024;
     int minEventBatchSize = 32;
     int workSize = 0;
+    int selectorWorkerCount = 0;
     String inputEventFilePath = null;
     String usecaseName = null;
     String executionPlanName = null;
@@ -90,7 +91,7 @@ public class UsecaseRunner {
             boolean asyncEnabled, boolean gpuEnabled, 
             int maxEventBatchSize, int minEventBatchSize,
             int eventBlockSize, boolean softBatchScheduling,
-            int workSize, Usecase usecases[], boolean useMultiDevice) {
+            int workSize, int selectorWorkerCount, Usecase usecases[], boolean useMultiDevice) {
         
         String sensorStream = "@plan:name('" + executionPlanName + executionPlanId + "') " + (asyncEnabled ? "@plan:parallel" : "" ) + " "
                 + "define stream sensorStream ( sid string, ts long, "
@@ -126,6 +127,7 @@ public class UsecaseRunner {
                     .append("batch.schedule='").append((softBatchScheduling ? "soft" : "hard")).append("', ")
                     .append("string.sizes='symbol=8', ")
                     .append("work.size='").append(workSize).append("' ")
+                    .append("selector.workers='").append(selectorWorkerCount).append("' ")
                     .append(") ")
                     .append("@performance(batch.count='1000') ");
                 }
@@ -177,6 +179,9 @@ public class UsecaseRunner {
             }
             if (cmd.hasOption("w")) {
                 workSize = Integer.parseInt(cmd.getOptionValue("w"));
+            }
+            if (cmd.hasOption("l")) {
+                selectorWorkerCount = Integer.parseInt(cmd.getOptionValue("l"));
             }
             if (cmd.hasOption("m")) {
                 multiDevice = Boolean.parseBoolean(cmd.getOptionValue("m"));
@@ -250,8 +255,8 @@ public class UsecaseRunner {
         for(int i=0; i<execPlanCount; ++i) {
             Usecase usecases[] = getUsecases(i, usecaseName, usecaseCountPerExecPlan);
             String queryPlan = getQueryPlan(i, executionPlanName, asyncEnabled, gpuEnabled, maxEventBatchSize, 
-                    minEventBatchSize, eventBlockSize, softBatchScheduling, workSize, usecases, multiDevice);
-            
+                    minEventBatchSize, eventBlockSize, softBatchScheduling, workSize, selectorWorkerCount, usecases, multiDevice);
+             
             executionPlanRuntimes[i] = siddhiManager.createExecutionPlanRuntime(queryPlan);
             
             for(Usecase usecase: usecases) {
@@ -345,6 +350,7 @@ public class UsecaseRunner {
         cliOptions.addOption("c", "usecase-count", true, "Usecase count per ExecutionPlan");
         cliOptions.addOption("x", "execplan-count", true, "ExecutionPlan count");
         cliOptions.addOption("m", "use-multidevice", true, "Use multiple GPU devices");
+        cliOptions.addOption("l", "selector-workers", true, "Number of worker thread for selector processor - 0=default");
         
         ucRunner = new UsecaseRunner();
         ucRunner.configure(args);
