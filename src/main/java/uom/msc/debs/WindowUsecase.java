@@ -11,11 +11,11 @@ public class WindowUsecase extends Usecase {
     public WindowUsecase(int execPlanId) {
         super(execPlanId);
         
-        addSingleDeviceQuery(new TestQuery("matchTimes", "from sensorStream#window.length(2000) " +
+        addSingleDeviceQuery(new TestQuery("matchTimes", "from sensorStream#window.length(50000) " +
                 "select sid, ts, x, y " +
                 "insert into windowSensorStream;", 1));
         
-        addSingleDeviceQuery(new TestQuery("players", "from sensorStream#window.length(10000) " +
+        addSingleDeviceQuery(new TestQuery("players", "from sensorStream#window.length(50000) " +
                 "select sid, ts, x, y " +
                 "insert into windowSensorStream;", 1));
         
