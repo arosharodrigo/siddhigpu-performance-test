@@ -13,8 +13,8 @@ public class JoinUsecase extends Usecase {
     public JoinUsecase(int execPlanId) {
         super(execPlanId);
         
-        addSingleDeviceQuery(new TestQuery("nearBallStream", "from sensorStream[sid == '4' or sid == '8' or sid == '10' or sid == '12']#window.length(200) as a "
-                + "join sensorStream[sid != '4' and sid != '8' and sid != '10' and sid != '12' and sid != '105' and sid != '106']#window.length(200) as b "
+        addSingleDeviceQuery(new TestQuery("nearBallStream", "from sensorStream[sid == '4' or sid == '8' or sid == '10' or sid == '12']#window.length(2000) as a "
+                + "join sensorStream[sid != '4' and sid != '8' and sid != '10' and sid != '12' and sid != '105' and sid != '106']#window.length(2000) as b "
                 + "on a.x == b.x and a.y == b.y and a.ts > b.ts and (a.ts - b.ts < 1000000000) " 
                 + "select b.sid as psid, a.sid as bsid, b.ts as pts, a.ts as bts, b.x as px, b.y as py, a.x as bx, a.y as by " 
                 + "insert into nearBallStream;", 1));
