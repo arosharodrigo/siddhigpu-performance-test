@@ -12,7 +12,8 @@ public class FilterUsecase extends Usecase {
     public FilterUsecase(int execPlanId) {
         super(execPlanId);
         
-        addSingleDeviceQuery(new TestQuery("ballStream", "from sensorStream[sid == '4' or sid == '8' or sid == '10' or sid == '12'] "
+        addSingleDeviceQuery(new TestQuery("ballStream", "from sensorStream[(sid == '4' or sid == '8' or sid == '10' or sid == '12') and "
+        		+ "((ts >= 10753295594424116l and ts <= 12557295594424116l) or (ts >= 13086639146403495l and ts <= 14879639146403495l))] "
                 + "select sid, ts, x, y "
                 + "insert into ballStream;", 1));
         
