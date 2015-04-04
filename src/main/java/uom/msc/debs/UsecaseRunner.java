@@ -53,6 +53,7 @@ public class UsecaseRunner {
     int usecaseCountPerExecPlan = 0;
     int execPlanCount = 0;
     boolean multiDevice = false;
+    int deviceCount = 0;
     
     private static Usecase[] getUsecases(int execPlanId, String usecaseName, int usecaseCountPerExecPlan) {
 
@@ -91,7 +92,8 @@ public class UsecaseRunner {
             boolean asyncEnabled, boolean gpuEnabled, 
             int maxEventBatchSize, int minEventBatchSize,
             int eventBlockSize, boolean softBatchScheduling,
-            int workSize, int selectorWorkerCount, Usecase usecases[], boolean useMultiDevice) {
+            int workSize, int selectorWorkerCount, Usecase usecases[], 
+            boolean useMultiDevice, int deviceCount) {
         
         String sensorStream = "@plan:name('" + executionPlanName + executionPlanId + "') " + (asyncEnabled ? "@plan:parallel" : "" ) + " "
                 + "define stream sensorStream ( sid string, ts long, "
@@ -104,6 +106,8 @@ public class UsecaseRunner {
         System.out.println("Stream def = [ " + sensorStream + " ]");
         StringBuffer execString = new StringBuffer();
         execString.append(sensorStream);
+        
+        int multiDeviceId = 0;
         
         int usecaseIndex = 0;
         for(Usecase usecase : usecases) {
@@ -119,9 +123,13 @@ public class UsecaseRunner {
                 sb.append("@info(name = '" + query.queryId + usecaseIndex + "') ");
                 if(gpuEnabled && query.cudaDeviceId >= 0)
                 {
-                    sb.append("@gpu(")
-                    .append("cuda.device='").append(query.cudaDeviceId).append("', ")
-                    .append("batch.max.size='").append(maxEventBatchSize).append("', ")
+                    sb.append("@gpu(");
+                    if(!useMultiDevice) {
+                        sb.append("cuda.device='").append(query.cudaDeviceId).append("', ");
+                    } else {
+                        sb.append("cuda.device='").append((multiDeviceId++ % deviceCount)).append("', ");
+                    }
+                    sb.append("batch.max.size='").append(maxEventBatchSize).append("', ")
                     .append("batch.min.size='").append(minEventBatchSize).append("', ")
                     .append("block.size='").append(eventBlockSize).append("', ")
                     .append("batch.schedule='").append((softBatchScheduling ? "soft" : "hard")).append("', ")
@@ -185,6 +193,12 @@ public class UsecaseRunner {
             }
             if (cmd.hasOption("m")) {
                 multiDevice = Boolean.parseBoolean(cmd.getOptionValue("m"));
+                if (cmd.hasOption("d")) {
+                    deviceCount = Integer.parseInt(cmd.getOptionValue("d"));
+                } else {
+                    System.out.println("Please provide device count");
+                    Help(); 
+                }
             }
             if (cmd.hasOption("i")) {
                 inputEventFilePath = cmd.getOptionValue("i");
@@ -255,7 +269,8 @@ public class UsecaseRunner {
         for(int i=0; i<execPlanCount; ++i) {
             Usecase usecases[] = getUsecases(i, usecaseName, usecaseCountPerExecPlan);
             String queryPlan = getQueryPlan(i, executionPlanName, asyncEnabled, gpuEnabled, maxEventBatchSize, 
-                    minEventBatchSize, eventBlockSize, softBatchScheduling, workSize, selectorWorkerCount, usecases, multiDevice);
+                    minEventBatchSize, eventBlockSize, softBatchScheduling, workSize, selectorWorkerCount, usecases, 
+                    multiDevice, deviceCount);
              
             executionPlanRuntimes[i] = siddhiManager.createExecutionPlanRuntime(queryPlan);
             
@@ -350,6 +365,7 @@ public class UsecaseRunner {
         cliOptions.addOption("c", "usecase-count", true, "Usecase count per ExecutionPlan");
         cliOptions.addOption("x", "execplan-count", true, "ExecutionPlan count");
         cliOptions.addOption("m", "use-multidevice", true, "Use multiple GPU devices");
+        cliOptions.addOption("d", "device-count", true, "GPU devices count");
         cliOptions.addOption("l", "selector-workers", true, "Number of worker thread for selector processor - 0=default");
         
         ucRunner = new UsecaseRunner();
