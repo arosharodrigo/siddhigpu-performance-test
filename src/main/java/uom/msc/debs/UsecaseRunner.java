@@ -55,6 +55,8 @@ public class UsecaseRunner {
     boolean multiDevice = false;
     int deviceCount = 0;
     
+    static int multiDeviceId = 0;
+    
     private static Usecase[] getUsecases(int execPlanId, String usecaseName, int usecaseCountPerExecPlan) {
 
         Usecase usecases[] = new Usecase[usecaseCountPerExecPlan];
@@ -106,8 +108,6 @@ public class UsecaseRunner {
         System.out.println("Stream def = [ " + sensorStream + " ]");
         StringBuffer execString = new StringBuffer();
         execString.append(sensorStream);
-        
-        int multiDeviceId = 0;
         
         int usecaseIndex = 0;
         for(Usecase usecase : usecases) {
