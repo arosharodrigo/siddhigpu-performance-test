@@ -1,30 +1,19 @@
 package uom.msc.debs;
 
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
-
-import org.apache.commons.cli.BasicParser;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.*;
 import org.apache.commons.math3.stat.descriptive.AggregateSummaryStatistics;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.StatisticalSummaryValues;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.log4j.Logger;
 import org.wso2.siddhi.core.ExecutionPlanRuntime;
 import org.wso2.siddhi.core.SiddhiManager;
 import org.wso2.siddhi.core.stream.input.InputHandler;
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
+
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UsecaseRunner {
     private static final Logger log = Logger.getLogger(UsecaseRunner.class);
@@ -36,17 +25,19 @@ public class UsecaseRunner {
     private ExecutionPlanRuntime executionPlanRuntimes[] = null;
     private Thread eventSenderThreads[] = null;
     private InputFileReader fileReader = null;
-    
+
     boolean asyncEnabled = true;
     boolean gpuEnabled = false;
-    int defaultBufferSize = 1024;
     int threadPoolSize = 4;
+    int defaultBufferSize = 1024;
+
     int eventBlockSize = 256;
     boolean softBatchScheduling = true;
     int maxEventBatchSize = 1024;
     int minEventBatchSize = 32;
     int workSize = 0;
     int selectorWorkerCount = 0;
+
     String inputEventFilePath = null;
     String usecaseName = null;
     String executionPlanName = null;
@@ -56,6 +47,8 @@ public class UsecaseRunner {
     int deviceCount = 0;
     
     static int multiDeviceId = 0;
+
+    static int queryCountPerUsecase = 0;
     
     private static Usecase[] getUsecases(int execPlanId, String usecaseName, int usecaseCountPerExecPlan) {
 
@@ -86,6 +79,7 @@ public class UsecaseRunner {
                 usecases[i] = new MixUsecase(execPlanId);
             }
         }
+        queryCountPerUsecase = usecases[0].getSingleDeviceQueries().size();
         
         return usecases;
     }
@@ -125,7 +119,7 @@ public class UsecaseRunner {
                 {
                     sb.append("@gpu(");
                     if(!useMultiDevice) {
-                        sb.append("cuda.device='").append(query.cudaDeviceId).append("', ");
+                        sb.append("cuda.device='").append("0").append("', ");
                     } else {
                         sb.append("cuda.device='").append((multiDeviceId++ % deviceCount)).append("', ");
                     }
@@ -304,6 +298,7 @@ public class UsecaseRunner {
     }
     
     public void onEnd() {
+        printPerformanceLogs();
         System.out.println("ExecutionPlan : name=" + executionPlanName + " OnEnd");
         
         List<SummaryStatistics> statList  = new ArrayList<SummaryStatistics>();
@@ -338,6 +333,23 @@ public class UsecaseRunner {
         .append("|StdDev=").append(decimalFormat.format(totalStatistics.getStandardDeviation())).toString());
 //        .append("|10=").append(decimalFormat.format(totalStatistics.getPercentile(10)))
 //        .append("|90=").append(decimalFormat.format(totalStatistics.getPercentile(90))).toString());
+    }
+
+    private void printPerformanceLogs() {
+        String separator = "|";
+        System.out.println("Performance Logs|"
+                + execPlanCount + separator
+                + usecaseCountPerExecPlan + separator
+                + defaultBufferSize + separator
+                + threadPoolSize + separator
+                + minEventBatchSize + separator
+                + maxEventBatchSize + separator
+                + eventBlockSize + separator
+                + workSize + separator
+                + selectorWorkerCount + separator
+                + softBatchScheduling + separator
+                + execPlanCount*usecaseCountPerExecPlan*queryCountPerUsecase + separator
+        );
     }
     
     private static void Help() {
