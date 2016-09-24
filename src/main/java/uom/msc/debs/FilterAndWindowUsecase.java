@@ -13,11 +13,11 @@ public class FilterAndWindowUsecase extends Usecase {
         addSingleDeviceQuery(new TestQuery("matchTimes", "from sensorStream[(ts >= 10753295594424116l and ts <= 12557295594424116l) or "
                 + "(ts >= 13086639146403495l and ts <= 14879639146403495l)]#window.length(1000) " +
                 "select sid, ts " +
-                "insert into filteredSensorStream;", 1));
+                "insert into filteredSensorStream;", 0));
         
         addSingleDeviceQuery(new TestQuery("players", "from sensorStream[sid != '97' and sid != '98' and sid != '99' and sid != '100']#window.length(1000) " +
                 "select sid, ts " +
-                "insert into filteredSensorStream;", 1));
+                "insert into filteredSensorStream;", 0));
         
         addMultiDeviceQuery(new TestQuery("matchTimes", "from sensorStream[(ts >= 10753295594424116l and ts <= 12557295594424116l) or "
                 + "(ts >= 13086639146403495l and ts <= 14879639146403495l)]#window.length(1000) " +

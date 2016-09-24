@@ -13,11 +13,11 @@ public class WindowUsecase extends Usecase {
         
         addSingleDeviceQuery(new TestQuery("matchTimes", "from sensorStream#window.length(50000) " +
                 "select sid, ts, x, y " +
-                "insert into windowSensorStream;", 1));
+                "insert into windowSensorStream;", 0));
         
         addSingleDeviceQuery(new TestQuery("players", "from sensorStream#window.length(50000) " +
                 "select sid, ts, x, y " +
-                "insert into windowSensorStream;", 1));
+                "insert into windowSensorStream;", 0));
         
         addMultiDeviceQuery(new TestQuery("matchTimes", "from sensorStream#window.length(1000) " +
                 "select sid, ts, x, y " +
