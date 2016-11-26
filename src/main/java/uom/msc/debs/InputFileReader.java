@@ -1,5 +1,7 @@
 package uom.msc.debs;
 
+import org.wso2.siddhi.core.event.Event;
+
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -8,8 +10,6 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
-import org.wso2.siddhi.core.event.Event;
 
 public class InputFileReader implements Runnable {
     public static final long DATA_START_TIME_PS = 10629342490369879L;
@@ -22,6 +22,7 @@ public class InputFileReader implements Runnable {
     private DecimalFormat f = new DecimalFormat("#.##");
     private String filePath;
     private UsecaseRunner usecaseRunner;
+    private FilterUseCaseRunner filterUseCaseRunner;
 //    private List<BlockingQueue<Event>> blockingQueues = new ArrayList<BlockingQueue<Event>>();
     private List<EventSender> eventSenders = new ArrayList<EventSender>();
 
@@ -29,6 +30,12 @@ public class InputFileReader implements Runnable {
         super();
         this.filePath = filePath;
         this.usecaseRunner = usecaseRunner;
+    }
+
+    public InputFileReader(String filePath, FilterUseCaseRunner filterUseCaseRunner) {
+        super();
+        this.filePath = filePath;
+        this.filterUseCaseRunner = filterUseCaseRunner;
     }
 
 //    public void addQueue(BlockingQueue<Event> queue) {
@@ -124,8 +131,10 @@ public class InputFileReader implements Runnable {
             final long tsMs = (DATA_END_TIME_PS - DATA_START_TIME_PS) / 1000000000;
             double expectedThroughput = count * 1000.0f / tsMs;
             double speedup = (double)tsMs / (double)millis;
-            
-            System.out.println("EventConsume [" + UsecaseRunner.testConfigurations + 
+
+            String testConfigs = (UsecaseRunner.testConfigurations != null) ? UsecaseRunner.testConfigurations : FilterUseCaseRunner.testConfigurations;
+
+            System.out.println("EventConsume [" + testConfigs +
                     "|TimeMs=" + millis + "|ThroughputEPS=" + f.format(1000.0f * count / millis) + 
                     "|RealtimeMs=" + tsMs + "|RealThroughputEPS=" + f.format(expectedThroughput) + 
                     "|Speedup=" + f.format(speedup) + "]");      
@@ -153,8 +162,13 @@ public class InputFileReader implements Runnable {
                 e.printStackTrace();
             }
             
-            usecaseRunner.onEnd();
-            
+            if(filterUseCaseRunner != null) {
+                filterUseCaseRunner.onEnd();
+            }
+            if(usecaseRunner!= null) {
+                usecaseRunner.onEnd();
+            }
+
             System.out.println("System shutdown");
             System.exit(0);
         }
