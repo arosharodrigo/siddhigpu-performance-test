@@ -5,9 +5,12 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.wso2.siddhi.core.event.Event;
 
@@ -25,10 +28,14 @@ public class InputFileReader implements Runnable {
 //    private List<BlockingQueue<Event>> blockingQueues = new ArrayList<BlockingQueue<Event>>();
     private List<EventSender> eventSenders = new ArrayList<EventSender>();
 
+    private final ScheduledExecutorService scheduler;
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+
     public InputFileReader(String filePath, UsecaseRunner usecaseRunner) {
         super();
         this.filePath = filePath;
         this.usecaseRunner = usecaseRunner;
+        this.scheduler = Executors.newScheduledThreadPool(1);
     }
 
 //    public void addQueue(BlockingQueue<Event> queue) {
@@ -37,6 +44,14 @@ public class InputFileReader implements Runnable {
     
     public void addEventSender(EventSender sender) {
         eventSenders.add(sender);
+    }
+
+    public void startScheduler() {
+        int tps = usecaseRunner.getTps();
+        EventPublisher command = new EventPublisher(eventSenders);
+        System.out.println("Calling scheduler...");
+        scheduler.scheduleAtFixedRate(command, 1000000000, 1000000000/tps, TimeUnit.NANOSECONDS);
+//        scheduler.scheduleAtFixedRate(command, 1000, 1, TimeUnit.MICROSECONDS);
     }
 
     public void run() {
@@ -65,8 +80,8 @@ public class InputFileReader implements Runnable {
                         dataStr[0].intern(),  // XXX: is OK to use interns?
                         time, 
                         Integer.valueOf(dataStr[2]),
-                        Integer.valueOf(dataStr[3]), 
-                        Integer.valueOf(dataStr[4]), 
+                        Integer.valueOf(dataStr[3]),
+                        Integer.valueOf(dataStr[4]),
                         v_kmh,
                         a_ms, 
                         Integer.valueOf(dataStr[7]), 
@@ -83,17 +98,9 @@ public class InputFileReader implements Runnable {
 //                for(BlockingQueue<Event> q : blockingQueues) {
 //                    q.put(new Event(System.currentTimeMillis(), data));
 //                }
-                
-                for(EventSender sender : eventSenders) {
-                    sender.SendEvent(new Event(System.currentTimeMillis(), data));
-                }
 
+                EventStore.addInputEvent(new Event(System.currentTimeMillis(), data));
                 count++;
-
-                if (count % 100000 == 0) {
-                    long ts = (Long.valueOf(dataStr[1]) - DATA_START_TIME_PS) / 1000000000;
-                    System.out.println((count / 1000) + "k > " + ts / 60000 + " min : " + (ts % 60000) / 1000 + "s");
-                }
                 //                }
 
             }
@@ -124,12 +131,12 @@ public class InputFileReader implements Runnable {
             final long tsMs = (DATA_END_TIME_PS - DATA_START_TIME_PS) / 1000000000;
             double expectedThroughput = count * 1000.0f / tsMs;
             double speedup = (double)tsMs / (double)millis;
-            
-            System.out.println("EventConsume [" + UsecaseRunner.testConfigurations + 
-                    "|TimeMs=" + millis + "|ThroughputEPS=" + f.format(1000.0f * count / millis) + 
-                    "|RealtimeMs=" + tsMs + "|RealThroughputEPS=" + f.format(expectedThroughput) + 
-                    "|Speedup=" + f.format(speedup) + "]");      
-            
+
+            System.out.println("EventConsume [" + UsecaseRunner.testConfigurations +
+                    "|TimeMs=" + millis + "|ThroughputEPS=" + f.format(1000.0f * count / millis) +
+                    "|RealtimeMs=" + tsMs + "|RealThroughputEPS=" + f.format(expectedThroughput) +
+                    "|Speedup=" + f.format(speedup) + "]");
+
             for(EventSender sender : eventSenders) {
                 sender.printStatistics();
             }
@@ -157,6 +164,69 @@ public class InputFileReader implements Runnable {
             
             System.out.println("System shutdown");
             System.exit(0);
+        }
+    }
+
+    private static class EventStore {
+
+        private static BlockingQueue<Event> inputEvents = new ArrayBlockingQueue<Event>(100000);
+        private static AtomicLong counter = new AtomicLong(0);
+
+        public static Event pullInputEvent() {
+            Event event = inputEvents.poll();
+            if(event != null) {
+//                System.out.println("Pull an event from the queue" + event);
+                long count = counter.incrementAndGet();
+                if (count % 10000 == 0) {
+                    Object[] data = event.getData();
+                    long ts = ((Long)data[1] - DATA_START_TIME_PS) / 1000000000;
+                    System.out.println("Counter -> " + (count / 1000) + "k > " + ts / 60000 + " min : " + (ts % 60000) / 1000 + "s");
+                }
+            } else {
+                System.out.println("Event is null");
+            }
+            return event;
+        }
+
+        public static void addInputEvent(Event inputEvent) throws InterruptedException {
+            if(inputEvents.remainingCapacity() > 0) {
+//                System.out.println("Add an event to the queue" + inputEvent);
+                inputEvents.add(inputEvent);
+            } else {
+                boolean isFull = true;
+                while(isFull) {
+                    System.out.println("Input event queue is full and wait until its getting free " + inputEvents.remainingCapacity());
+                    Thread.sleep(100);
+                    if(inputEvents.remainingCapacity() > 0) {
+                        inputEvents.add(inputEvent);
+                        isFull = false;
+                    }
+                }
+            }
+        }
+    }
+
+    private class EventPublisher implements Runnable {
+
+        private List<EventSender> eventSenders;
+
+        public EventPublisher(List<EventSender> eventSenders) {
+            this.eventSenders = eventSenders;
+        }
+
+        @Override
+        public void run() {
+            try {
+                System.out.println("Scheduler start at " + dateFormat.format(new Date()));
+                Event event = EventStore.pullInputEvent();
+                if(event != null) {
+                    for(EventSender sender : eventSenders) {
+                        sender.SendEvent(event);
+                    }
+                }
+            } catch (Throwable e) {
+                System.out.println("Error occurred at EventPublisher: " + e);
+            }
         }
     }
 }

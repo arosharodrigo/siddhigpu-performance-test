@@ -26,6 +26,8 @@ public class UsecaseRunner {
     private Thread eventSenderThreads[] = null;
     private InputFileReader fileReader = null;
 
+    private int tps = 200;
+
     boolean asyncEnabled = true;
     boolean gpuEnabled = false;
     int threadPoolSize = 4;
@@ -155,6 +157,9 @@ public class UsecaseRunner {
         
         try {
             cmd = cliParser.parse(cliOptions, args);
+            if (cmd.hasOption("tps")) {
+                tps = Integer.parseInt(cmd.getOptionValue("tps"));
+            }
             if (cmd.hasOption("a")) {
                 asyncEnabled = Boolean.parseBoolean(cmd.getOptionValue("a"));
             }
@@ -232,7 +237,8 @@ public class UsecaseRunner {
         
         System.out.println("ExecutionPlan : name=" + executionPlanName + " execPalnCount=" + execPlanCount +
                 " usecase=" + usecaseName + " usecaseCount=" + usecaseCountPerExecPlan + " useMultiDevice=" + multiDevice);
-        System.out.println("Siddhi.Config [EnableAsync=" + asyncEnabled +
+        System.out.println("Siddhi.Config [TPS=" + tps +
+                "|EnableAsync=" + asyncEnabled +
                 "|GPUEnabled=" + gpuEnabled +
                 "|RingBufferSize=" + defaultBufferSize +
                 "|ThreadPoolSize=" + threadPoolSize +
@@ -287,7 +293,8 @@ public class UsecaseRunner {
         for(Thread t: eventSenderThreads) {
             t.start();
         }
-        
+
+        fileReader.startScheduler();
         Thread fileReaderThread = new Thread(fileReader);
         fileReaderThread.start();
         
@@ -379,7 +386,8 @@ public class UsecaseRunner {
         cliOptions.addOption("m", "use-multidevice", true, "Use multiple GPU devices");
         cliOptions.addOption("d", "device-count", true, "GPU devices count");
         cliOptions.addOption("l", "selector-workers", true, "Number of worker thread for selector processor - 0=default");
-        
+        cliOptions.addOption("tps", "tps", true, "TPS value");
+
         ucRunner = new UsecaseRunner();
         ucRunner.configure(args);
         ucRunner.start();
@@ -399,5 +407,9 @@ public class UsecaseRunner {
         });
         
         System.exit(0);
+    }
+
+    public int getTps() {
+        return tps;
     }
 }
