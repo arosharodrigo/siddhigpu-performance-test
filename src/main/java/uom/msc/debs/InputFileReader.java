@@ -27,15 +27,16 @@ public class InputFileReader implements Runnable {
     private UsecaseRunner usecaseRunner;
 //    private List<BlockingQueue<Event>> blockingQueues = new ArrayList<BlockingQueue<Event>>();
     private List<EventSender> eventSenders = new ArrayList<EventSender>();
+    private List<EventSender> gpuEventSenders = new ArrayList<EventSender>();
 
     private final ScheduledExecutorService scheduler;
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
     public InputFileReader(String filePath, UsecaseRunner usecaseRunner) {
         super();
         this.filePath = filePath;
         this.usecaseRunner = usecaseRunner;
-        this.scheduler = Executors.newScheduledThreadPool(1);
+        this.scheduler = Executors.newScheduledThreadPool(20);
     }
 
 //    public void addQueue(BlockingQueue<Event> queue) {
@@ -46,12 +47,14 @@ public class InputFileReader implements Runnable {
         eventSenders.add(sender);
     }
 
+    public void addGpuEventSender(EventSender sender) {
+        gpuEventSenders.add(sender);
+    }
+
     public void startScheduler() {
         int tps = usecaseRunner.getTps();
-        EventPublisher command = new EventPublisher(eventSenders);
-        System.out.println("Calling scheduler...");
-        scheduler.scheduleAtFixedRate(command, 1000000000, 1000000000/tps, TimeUnit.NANOSECONDS);
-//        scheduler.scheduleAtFixedRate(command, 1000, 1, TimeUnit.MICROSECONDS);
+        System.out.println("Calling scheduler..." + new Date());
+        scheduler.scheduleAtFixedRate(new EventPublisher(eventSenders, gpuEventSenders, 0.2), 5000000000L, 1000000000/tps, TimeUnit.NANOSECONDS);
     }
 
     public void run() {
@@ -120,6 +123,12 @@ public class InputFileReader implements Runnable {
                         break;
                     }
                 }
+                for(EventSender sender : gpuEventSenders) {
+                    if(!sender.isQueueEmpty()) {
+                        isAllDOne = false;
+                        break;
+                    }
+                }
                 Thread.sleep(10);
             }
             long end = System.currentTimeMillis();
@@ -138,6 +147,9 @@ public class InputFileReader implements Runnable {
                     "|Speedup=" + f.format(speedup) + "]");
 
             for(EventSender sender : eventSenders) {
+                sender.printStatistics();
+            }
+            for(EventSender sender : gpuEventSenders) {
                 sender.printStatistics();
             }
             
@@ -169,18 +181,19 @@ public class InputFileReader implements Runnable {
 
     private static class EventStore {
 
-        private static BlockingQueue<Event> inputEvents = new ArrayBlockingQueue<Event>(100000);
+        private static BlockingQueue<Event> inputEvents = new ArrayBlockingQueue<Event>(1200000);
         private static AtomicLong counter = new AtomicLong(0);
 
         public static Event pullInputEvent() {
             Event event = inputEvents.poll();
             if(event != null) {
 //                System.out.println("Pull an event from the queue" + event);
+                event.setTimestamp(System.currentTimeMillis());
                 long count = counter.incrementAndGet();
-                if (count % 10000 == 0) {
+                if (count % 1000 == 0) {
                     Object[] data = event.getData();
                     long ts = ((Long)data[1] - DATA_START_TIME_PS) / 1000000000;
-                    System.out.println("Counter -> " + (count / 1000) + "k > " + ts / 60000 + " min : " + (ts % 60000) / 1000 + "s");
+//                    System.out.println("Counter -> " + (count / 1000) + "k > " + ts / 60000 + " min : " + (ts % 60000) / 1000 + "s" + " Current Time :" + dateFormat.format(new Date()));
                 }
             } else {
                 System.out.println("Event is null");
@@ -206,22 +219,38 @@ public class InputFileReader implements Runnable {
         }
     }
 
-    private class EventPublisher implements Runnable {
+    private static class EventPublisher implements Runnable {
 
         private List<EventSender> eventSenders;
+        private List<EventSender> gpuEventSenders;
+        private double gpuPercentage;
 
-        public EventPublisher(List<EventSender> eventSenders) {
+        public EventPublisher(List<EventSender> eventSenders, List<EventSender> gpuEventSenders, double gpuPercentage) {
             this.eventSenders = eventSenders;
+            this.gpuEventSenders = gpuEventSenders;
+            this.gpuPercentage = gpuPercentage;
         }
+
+        private static final AtomicLong counter = new AtomicLong();
 
         @Override
         public void run() {
             try {
-                System.out.println("Scheduler start at " + dateFormat.format(new Date()));
                 Event event = EventStore.pullInputEvent();
                 if(event != null) {
-                    for(EventSender sender : eventSenders) {
-                        sender.SendEvent(event);
+                    long l = counter.getAndIncrement();
+                    if(l%1000000 == 0) {
+                        System.out.println("1000000 complete at " + dateFormat.format(new Date()));
+                    }
+
+                    if(gpuPercentage>0 && gpuPercentage*100 > l%100) {
+                        for(EventSender sender : gpuEventSenders) {
+                            sender.SendEvent(event);
+                        }
+                    } else {
+                        for(EventSender sender : eventSenders) {
+                            sender.SendEvent(event);
+                        }
                     }
                 }
             } catch (Throwable e) {

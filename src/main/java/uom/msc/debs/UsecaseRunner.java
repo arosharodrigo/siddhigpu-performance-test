@@ -22,7 +22,7 @@ public class UsecaseRunner {
     private static UsecaseRunner ucRunner;
     
     private SiddhiManager siddhiManager = null;
-    private ExecutionPlanRuntime executionPlanRuntimes[] = null;
+    private ExecutionPlanRuntimeWrapper executionPlanRuntimesWrappers[] = null;
     private Thread eventSenderThreads[] = null;
     private InputFileReader fileReader = null;
 
@@ -100,11 +100,20 @@ public class UsecaseRunner {
                 + "vx int, vy int, vz int, "
                 + "ax int, ay int, az int, "
                 + "tsr long, tsms long );";
+
+        String sensorStreamGpu = "define stream sensorStreamGpu ( sid string, ts long, "
+                + "x int, y int,  z int, "
+                + "v double, a double, "
+                + "vx int, vy int, vz int, "
+                + "ax int, ay int, az int, "
+                + "tsr long, tsms long );";
         
-        System.out.println("Stream def = [ " + sensorStream + " ]");
+        System.out.println("Stream def CPU = [ " + sensorStream + " ]");
+        System.out.println("Stream def GPU = [ " + sensorStreamGpu + " ]");
         StringBuffer execString = new StringBuffer();
         execString.append(sensorStream);
-        
+        execString.append(sensorStreamGpu);
+
         int usecaseIndex = 0;
         for(Usecase usecase : usecases) {
             List<TestQuery> queries = null;
@@ -113,11 +122,12 @@ public class UsecaseRunner {
             } else {
                 queries = usecase.getMultiDeviceQueries();
             }
-            
-            for(TestQuery query : queries) {
+            System.out.println("Query count: " + queries.size());
+            for(int i = 0; i < queries.size(); i++) {
+                TestQuery query = queries.get(i);
                 StringBuilder sb = new StringBuilder();
                 sb.append("@info(name = '" + query.queryId + usecaseIndex + "') ");
-                if(gpuEnabled && query.cudaDeviceId >= 0)
+                if(gpuEnabled && query.cudaDeviceId >= 0 && (i%2==0))
                 {
                     sb.append("@gpu(");
                     if(!useMultiDevice) {
@@ -261,8 +271,8 @@ public class UsecaseRunner {
 //                Executors.new newFixedThreadPool(threadPoolSize);
 //        siddhiManager.getSiddhiContext().setScheduledExecutorService(Executors.newScheduledThreadPool(threadPoolSize));
         
-        executionPlanRuntimes = new ExecutionPlanRuntime[execPlanCount];
-        eventSenderThreads = new Thread[execPlanCount];
+        executionPlanRuntimesWrappers = new ExecutionPlanRuntimeWrapper[execPlanCount];
+        eventSenderThreads = new Thread[execPlanCount*2];
         
         fileReader = new InputFileReader(inputEventFilePath, this);
         
@@ -271,21 +281,26 @@ public class UsecaseRunner {
             String queryPlan = getQueryPlan(i, executionPlanName, asyncEnabled, gpuEnabled, maxEventBatchSize, 
                     minEventBatchSize, eventBlockSize, softBatchScheduling, workSize, selectorWorkerCount, usecases, 
                     multiDevice, deviceCount);
+            System.out.println("Query plan for executionPlan[" + execPlanCount + "]: " + queryPlan);
              
-            executionPlanRuntimes[i] = siddhiManager.createExecutionPlanRuntime(queryPlan);
+            executionPlanRuntimesWrappers[i] = new ExecutionPlanRuntimeWrapper(siddhiManager.createExecutionPlanRuntime(queryPlan), usecases);
             
             for(Usecase usecase: usecases) {
-                usecase.addCallbacks(executionPlanRuntimes[i]);
+                usecase.addCallbacks(executionPlanRuntimesWrappers[i].getExecutionPlanRuntime());
             }
             
-            InputHandler inputHandlerSensorStream = executionPlanRuntimes[i].getInputHandler("sensorStream");
-            executionPlanRuntimes[i].start();
+            InputHandler inputHandlerSensorStream = executionPlanRuntimesWrappers[i].getExecutionPlanRuntime().getInputHandler("sensorStream");
+            InputHandler inputHandlerSensorStreamGpu = executionPlanRuntimesWrappers[i].getExecutionPlanRuntime().getInputHandler("sensorStreamGpu");
+            executionPlanRuntimesWrappers[i].getExecutionPlanRuntime().start();
             
-            EventSender sensorEventSender = new EventSender(i, inputHandlerSensorStream);
-            eventSenderThreads[i] = new Thread(sensorEventSender);
-            
+            EventSender sensorEventSender = new EventSender(i*2, inputHandlerSensorStream);
+            EventSender sensorEventSenderGpu = new EventSender((i*2)+1, inputHandlerSensorStreamGpu);
+            eventSenderThreads[i*2] = new Thread(sensorEventSender);
+            eventSenderThreads[(i*2)+1] = new Thread(sensorEventSenderGpu);
+
 //            fileReader.addQueue(sensorEventSender.getQueue());
             fileReader.addEventSender(sensorEventSender);
+            fileReader.addGpuEventSender(sensorEventSenderGpu);
         }
     }
     
@@ -307,10 +322,10 @@ public class UsecaseRunner {
     public void onEnd() {
         printPerformanceLogs();
         System.out.println("ExecutionPlan : name=" + executionPlanName + " OnEnd");
-        
+
         List<SummaryStatistics> statList  = new ArrayList<SummaryStatistics>();
-        for(ExecutionPlanRuntime execplan : executionPlanRuntimes) {
-            execplan.getStatistics(statList);
+        for(ExecutionPlanRuntimeWrapper execplanWrapper : executionPlanRuntimesWrappers) {
+            execplanWrapper.getExecutionPlanRuntime().getStatistics(statList);
         }
         
 //        DescriptiveStatistics totalStatistics = new DescriptiveStatistics();
@@ -322,8 +337,8 @@ public class UsecaseRunner {
 //        }
         StatisticalSummaryValues totalStatistics = AggregateSummaryStatistics.aggregate(statList);
         
-        for(ExecutionPlanRuntime execplan : executionPlanRuntimes) {
-            execplan.shutdown();
+        for(ExecutionPlanRuntimeWrapper execplanWrapper : executionPlanRuntimesWrappers) {
+            execplanWrapper.getExecutionPlanRuntime().shutdown();
         }
         
         final DecimalFormat decimalFormat = new DecimalFormat("###.##"); 
@@ -340,6 +355,21 @@ public class UsecaseRunner {
         .append("|StdDev=").append(decimalFormat.format(totalStatistics.getStandardDeviation())).toString());
 //        .append("|10=").append(decimalFormat.format(totalStatistics.getPercentile(10)))
 //        .append("|90=").append(decimalFormat.format(totalStatistics.getPercentile(90))).toString());
+
+        for(ExecutionPlanRuntimeWrapper execplanWrapper : executionPlanRuntimesWrappers) {
+            for(Usecase usecase : execplanWrapper.getUsecases()) {
+                SummaryStatistics latencyStatistics = usecase.getLatencyStatistics();
+                System.out.println(new StringBuilder()
+                        .append("EventProcessLatency ExecutionPlan=").append(executionPlanName)
+                        .append("|").append(UsecaseRunner.testConfigurations)
+                        .append("|length=").append(latencyStatistics.getN())
+                        .append("|Avg=").append(decimalFormat.format(latencyStatistics.getMean()))
+                        .append("|Min=").append(decimalFormat.format(latencyStatistics.getMin()))
+                        .append("|Max=").append(decimalFormat.format(latencyStatistics.getMax()))
+                        .append("|Var=").append(decimalFormat.format(latencyStatistics.getVariance()))
+                        .append("|StdDev=").append(decimalFormat.format(latencyStatistics.getStandardDeviation())).toString());
+            }
+        }
     }
 
     private void printPerformanceLogs() {
