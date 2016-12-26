@@ -53,7 +53,7 @@ public class EventSender implements Runnable {
     
     public void printStatistics() {
         System.out.println(new StringBuilder()
-        .append("QueuePublishLatency ExecutionPlan=").append(senderId).append(" [")
+        .append("QueuePublishLatency Sender Id=").append(senderId).append(" [")
         .append(UsecaseRunner.testConfigurations)
         .append("|length=").append(qmPublishLatency.getN())
         .append("|Avg=").append(f.format(qmPublishLatency.getMean()))

@@ -26,7 +26,7 @@ public class OutputPerfromanceCalculator {
         if (count % batchCount == 0) {
             long end = System.currentTimeMillis();
             double tp = ((eventCount) * 1000.0) / (end - start);
-            System.out.println(name + " Throughput = " + decimalFormat.format(tp) + " Event/sec " + (eventCount));
+//            System.out.println(name + " Throughput = " + decimalFormat.format(tp) + " Event/sec " + (eventCount));
             start = end;
             eventCount = 0;
         }
