@@ -5,7 +5,6 @@ import org.apache.commons.math3.stat.descriptive.AggregateSummaryStatistics;
 import org.apache.commons.math3.stat.descriptive.StatisticalSummaryValues;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.apache.log4j.Logger;
-import org.wso2.siddhi.core.ExecutionPlanRuntime;
 import org.wso2.siddhi.core.SiddhiManager;
 import org.wso2.siddhi.core.stream.input.InputHandler;
 import sun.misc.Signal;
@@ -27,6 +26,7 @@ public class UsecaseRunner {
     private InputFileReader fileReader = null;
 
     private int tps = 200;
+    private double gpuPercentage = 0.0;
 
     boolean asyncEnabled = true;
     boolean gpuEnabled = false;
@@ -170,6 +170,9 @@ public class UsecaseRunner {
             if (cmd.hasOption("tps")) {
                 tps = Integer.parseInt(cmd.getOptionValue("tps"));
             }
+            if (cmd.hasOption("gpuPercentage")) {
+                gpuPercentage = Double.parseDouble(cmd.getOptionValue("gpuPercentage"));
+            }
             if (cmd.hasOption("a")) {
                 asyncEnabled = Boolean.parseBoolean(cmd.getOptionValue("a"));
             }
@@ -248,6 +251,7 @@ public class UsecaseRunner {
         System.out.println("ExecutionPlan : name=" + executionPlanName + " execPalnCount=" + execPlanCount +
                 " usecase=" + usecaseName + " usecaseCount=" + usecaseCountPerExecPlan + " useMultiDevice=" + multiDevice);
         System.out.println("Siddhi.Config [TPS=" + tps +
+                "|gpuPercentage=" + gpuPercentage +
                 "|EnableAsync=" + asyncEnabled +
                 "|GPUEnabled=" + gpuEnabled +
                 "|RingBufferSize=" + defaultBufferSize +
@@ -417,6 +421,7 @@ public class UsecaseRunner {
         cliOptions.addOption("d", "device-count", true, "GPU devices count");
         cliOptions.addOption("l", "selector-workers", true, "Number of worker thread for selector processor - 0=default");
         cliOptions.addOption("tps", "tps", true, "TPS value");
+        cliOptions.addOption("gpuPercentage", "gpuPercentage", true, "GPU percentage value");
 
         ucRunner = new UsecaseRunner();
         ucRunner.configure(args);
@@ -441,5 +446,9 @@ public class UsecaseRunner {
 
     public int getTps() {
         return tps;
+    }
+
+    public double getGpuPercentage() {
+        return gpuPercentage;
     }
 }
