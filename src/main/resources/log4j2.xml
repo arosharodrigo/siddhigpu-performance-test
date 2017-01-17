@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ (C) Copyright 2010-2015 hSenid Mobile Solutions (Pvt) Limited.
+  ~ All Rights Reserved.
+  ~
+  ~ These materials are unpublished, proprietary, confidential source code of
+  ~ hSenid Mobile Solutions (Pvt) Limited and constitute a TRADE SECRET
+  ~ of hSenid Mobile Solutions (Pvt) Limited.
+  ~
+  ~ hSenid Mobile Solutions (Pvt) Limited retains all title to and intellectual
+  ~ property rights in these materials.
+  -->
+
+<Configuration status="DEBUG" monitorInterval="60">
+
+    <Properties>
+        <!--variables-->
+        <Property name="system-id">SIDDHI-PERF-SIM</Property>
+        <Property name="log-path">/home/arosha/projects/Siddhi/projects/siddhigpu-performance-test/logs</Property>
+        <!--log patterns-->
+        <Property name="default-log-pattern">%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level%x %c{1} [%t] - %msg%n</Property>
+        <Property name="default-log-pattern-2">[%d{yyyy-MM-dd HH:mm:ss.SSS}] %5p [%t] (%F:%L) - %m%n</Property>
+        <Property name="console-log-pattern">%5p - %m%n</Property>
+        <!--log rotate patterns-->
+        <Property name="hourly-log-rotate-pattern">.log.%d{yyyy-MM-dd-HH}</Property>
+        <Property name="daily-log-rotate-pattern">.log.%d{yyyy-MM-dd}</Property>
+    </Properties>
+
+    <Appenders>
+
+        <Console name="consoleAppender" target="SYSTEM_OUT">
+            <PatternLayout pattern="${console-log-pattern}"/>
+        </Console>
+
+        <RollingRandomAccessFile name="errorAppender" fileName="${log-path}/error.log"
+                                 filePattern="${log-path}/error${daily-log-rotate-pattern}">
+            <PatternLayout pattern="${default-log-pattern}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+        </RollingRandomAccessFile>
+
+        <RollingRandomAccessFile name="infoAppender" fileName="${log-path}/info.log"
+                                 filePattern="${log-path}/info${daily-log-rotate-pattern}">
+            <PatternLayout pattern="${default-log-pattern}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+        </RollingRandomAccessFile>
+
+        <RollingRandomAccessFile name="traceAppender" fileName="${log-path}/trace.log"
+                                 filePattern="${log-path}/trace${daily-log-rotate-pattern}">
+            <PatternLayout pattern="${default-log-pattern}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+        </RollingRandomAccessFile>
+
+        <RollingRandomAccessFile name="performanceAppender" fileName="${log-path}/performance.log"
+                                 filePattern="${log-path}/performance${daily-log-rotate-pattern}">
+            <PatternLayout pattern="${default-log-pattern}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+            </Policies>
+        </RollingRandomAccessFile>
+
+    </Appenders>
+
+    <Loggers>
+
+        <Logger name="uom.msc.debs" level="debug" additivity="false">
+            <appender-ref ref="consoleAppender" level="error"/>
+            <appender-ref ref="errorAppender" level="error"/>
+            <appender-ref ref="infoAppender" level="info"/>
+            <appender-ref ref="traceAppender" level="trace"/>
+            <appender-ref ref="performanceAppender" level="trace"/>
+        </Logger>
+
+        <Root level="debug" additivity="false">
+            <appender-ref ref="consoleAppender" level="error"/>
+            <appender-ref ref="errorAppender" level="error"/>
+            <appender-ref ref="infoAppender" level="info"/>
+            <appender-ref ref="traceAppender" level="trace"/>
+            <appender-ref ref="performanceAppender" level="trace"/>
+        </Root>
+    </Loggers>
+
+</Configuration>
