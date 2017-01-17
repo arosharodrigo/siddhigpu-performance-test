@@ -1,30 +1,36 @@
-package uom.msc.debs;
+package uom.msc.debs.usecase;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
 import org.wso2.siddhi.core.ExecutionPlanRuntime;
+import uom.msc.debs.TestQuery;
+import uom.msc.debs.calculate.Calculate;
 
-public abstract class Usecase {
+public abstract class UseCase {
+
     private List<TestQuery> singleDevicequeries;
     private List<TestQuery> multiDevicequeries;
-    protected int execPlanId;
-    private SummaryStatistics latencyStatistics;
+    private int execPlanId;
+    private List<Calculate> calculateList;
     
-    public Usecase(int execPlanId) {
+    public UseCase(int execPlanId) {
         this.execPlanId = execPlanId;
-        singleDevicequeries = new ArrayList<TestQuery>();
-        multiDevicequeries = new ArrayList<TestQuery>();
-        latencyStatistics = new SummaryStatistics();
+        singleDevicequeries = new ArrayList<>();
+        multiDevicequeries = new ArrayList<>();
+        calculateList = new ArrayList<>();
     }
 
-    public void addLatencyValue(long latency) {
-        synchronized (latencyStatistics) {
-            latencyStatistics.addValue(latency);
+    public void onEnd(String executionPlanName, String config) {
+        for(Calculate calculate : calculateList) {
+            calculate.printResults(executionPlanName, config);
         }
     }
-    
+
+    public void addCalculator(Calculate calculate) {
+        calculateList.add(calculate);
+    }
+
     public void addSingleDeviceQuery(TestQuery query) {
         singleDevicequeries.add(query);
     }
@@ -39,10 +45,6 @@ public abstract class Usecase {
     
     public List<TestQuery> getMultiDeviceQueries() {
         return multiDevicequeries;
-    }
-
-    public SummaryStatistics getLatencyStatistics() {
-        return latencyStatistics;
     }
 
     public int getExecPlanId() {

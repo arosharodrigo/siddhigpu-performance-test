@@ -1,14 +1,18 @@
-package uom.msc.debs;
+package uom.msc.debs.usecase;
 
 import org.wso2.siddhi.core.ExecutionPlanRuntime;
 import org.wso2.siddhi.core.event.Event;
 import org.wso2.siddhi.core.stream.output.StreamCallback;
+import uom.msc.debs.calculate.LatencyCalculator;
+import uom.msc.debs.calculate.OutputPerformanceCalculator;
+import uom.msc.debs.TestQuery;
 
-public class WindowUsecase extends Usecase {
+public class WindowUseCase extends UseCase {
 
-    private static OutputPerfromanceCalculator performanceCalculator = null;
+    private OutputPerformanceCalculator performanceCalculator;
+    private LatencyCalculator latencyCalculator;
     
-    public WindowUsecase(int execPlanId) {
+    public WindowUseCase(int execPlanId) {
         super(execPlanId);
         
         addSingleDeviceQuery(new TestQuery("matchTimes", "from sensorStream#window.length(50000) " +
@@ -26,17 +30,20 @@ public class WindowUsecase extends Usecase {
         addMultiDeviceQuery(new TestQuery("players", "from sensorStream#window.length(10000) " +
                 "select sid, ts, x, y " +
                 "insert into windowSensorStream;", 1));
+
+        performanceCalculator = new OutputPerformanceCalculator("windowSensorStream", 1024000);
+        latencyCalculator = new LatencyCalculator("windowSensorStream");
+        addCalculator(performanceCalculator);
+        addCalculator(latencyCalculator);
     }
 
     @Override
     public void addCallbacks(ExecutionPlanRuntime executionPlanRuntime) {
-        performanceCalculator = new OutputPerfromanceCalculator("windowSensorStream", 1024000);
-        
         executionPlanRuntime.addCallback("windowSensorStream", new StreamCallback() {
             @Override
             public void receive(Event[] inEvents) {
-                performanceCalculator.calculate(inEvents.length);
-//                EventPrinter.print(inEvents);
+                performanceCalculator.calculate(inEvents);
+                latencyCalculator.calculate(inEvents);
             }
         });
     }
