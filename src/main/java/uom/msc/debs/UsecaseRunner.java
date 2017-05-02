@@ -1,30 +1,20 @@
 package uom.msc.debs;
 
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
-
-import org.apache.commons.cli.BasicParser;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.*;
 import org.apache.commons.math3.stat.descriptive.AggregateSummaryStatistics;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.commons.math3.stat.descriptive.StatisticalSummaryValues;
 import org.apache.commons.math3.stat.descriptive.SummaryStatistics;
+import org.apache.commons.math3.stat.descriptive.SynchronizedSummaryStatistics;
 import org.apache.log4j.Logger;
 import org.wso2.siddhi.core.ExecutionPlanRuntime;
 import org.wso2.siddhi.core.SiddhiManager;
 import org.wso2.siddhi.core.stream.input.InputHandler;
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
+
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UsecaseRunner {
     private static final Logger log = Logger.getLogger(UsecaseRunner.class);
@@ -253,8 +243,8 @@ public class UsecaseRunner {
                 + "|mode=" + mode + "|rb=" + defaultBufferSize + "|bs=" + eventBlockSize + "|bmin=" + minEventBatchSize
                 + "|bmax=" + maxEventBatchSize; 
         
-        siddhiManager.getSiddhiContext().setEventBufferSize(defaultBufferSize); 
-        siddhiManager.getSiddhiContext().setThreadPoolInitSize(threadPoolSize);
+//        siddhiManager.getSiddhiContext().setEventBufferSize(defaultBufferSize);
+//        siddhiManager.getSiddhiContext().setThreadPoolInitSize(threadPoolSize);
 //        siddhiManager.getSiddhiContext().setExecutorService(new ThreadPoolExecutor(threadPoolSize, Integer.MAX_VALUE,
 //                60L, TimeUnit.SECONDS,
 //                new LinkedBlockingDeque<Runnable>()));
@@ -306,7 +296,7 @@ public class UsecaseRunner {
     public void onEnd() {
         System.out.println("ExecutionPlan : name=" + executionPlanName + " OnEnd");
         
-        List<SummaryStatistics> statList  = new ArrayList<SummaryStatistics>();
+        List<SynchronizedSummaryStatistics> statList  = new ArrayList<SynchronizedSummaryStatistics>();
         for(ExecutionPlanRuntime execplan : executionPlanRuntimes) {
             execplan.getStatistics(statList);
         }
@@ -318,7 +308,11 @@ public class UsecaseRunner {
 //                totalStatistics.addValue(d); 
 //            }
 //        }
-        StatisticalSummaryValues totalStatistics = AggregateSummaryStatistics.aggregate(statList);
+        List<SummaryStatistics> tempList  = new ArrayList<SummaryStatistics>();
+        for(SynchronizedSummaryStatistics stat : statList) {
+            tempList.add(stat);
+        }
+        StatisticalSummaryValues totalStatistics = AggregateSummaryStatistics.aggregate(tempList);
         
         for(ExecutionPlanRuntime execplan : executionPlanRuntimes) {
             execplan.shutdown();
