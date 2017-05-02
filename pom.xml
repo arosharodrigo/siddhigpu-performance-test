@@ -12,7 +12,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <siddhi.version>3.0.0.gpu-SNAPSHOT</siddhi.version>
+    <siddhi.version>4.0.0</siddhi.version>
     <platform>linux-x86_64</platform>
   </properties>
 
@@ -89,8 +89,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>2.0</version>
                 <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
+                    <source>1.8</source>
+                    <target>1.8</target>
                 </configuration>
             </plugin>
 <!--             <plugin>
